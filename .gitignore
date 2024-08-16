@@ -33,3 +33,5 @@
 
 # Utils
 *.sh
+# Makefile
+/Makefile
