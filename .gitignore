@@ -34,4 +34,7 @@
 # Utils
 *.sh
 # Makefile
-/Makefile
+/src/Makefile
+
+# Starter
+/src/modules/Starter.hpp
