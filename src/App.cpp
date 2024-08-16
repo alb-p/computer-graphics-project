@@ -1,6 +1,6 @@
 // This has been adapted from the Vulkan tutorial
 
-#include "Starter.hpp"
+#include "modules/Starter.hpp"
 
 // The uniform buffer objects data structures
 // Remember to use the correct alignas(...) value
@@ -141,9 +141,9 @@ class MeshLoader : public BaseProject {
 		// The second parameter is the pointer to the vertex definition for this model
 		// The third parameter is the file name
 		// The last is a constant specifying the file type: currently only OBJ or GLTF
-		M1.init(this,   &VD, "Models/Cube.obj", OBJ);
-		M2.init(this,   &VD, "Models/Sphere.gltf", GLTF);
-		M3.init(this,   &VD, "Models/dish.005_Mesh.098.mgcg", MGCG);
+		M1.init(this,   &VD, "models/Cube.obj", OBJ);
+		M2.init(this,   &VD, "models/Sphere.gltf", GLTF);
+		M3.init(this,   &VD, "models/dish.005_Mesh.098.mgcg", MGCG);
 
 		// Creates a mesh with direct enumeration of vertices and indices
 		M4.vertices = {{{-6,-2,-6}, {0.0f,0.0f}}, {{-6,-2,6}, {0.0f,1.0f}},
