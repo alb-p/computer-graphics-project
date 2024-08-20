@@ -16,11 +16,10 @@ layout(location = 2) out vec2 fragUV;
 
 // Here the Uniform buffers are defined. In this case, the Transform matrices (Set 1, binding 0)
 // are used. Note that the definition must match the one used in the CPP code
-const int NSHIP=16;
 layout(set = 1, binding = 0) uniform UniformBufferObject {
-	mat4 mvpMat[NSHIP];
-	mat4 mMat[NSHIP];
-	mat4 nMat[NSHIP];
+	mat4 mvpMat;
+	mat4 mMat;
+	mat4 nMat;
 } ubo;
 
 // Here the shader simply computes clipping coordinates, and passes to the Fragment Shader

@@ -49,6 +49,12 @@ struct NormalMapParUniformBufferObject {
     alignas(4) float ShowTexture;
 };
 
+struct PlaneUniformBufferObject {
+    alignas(16) glm::mat4 mvpMat;
+    alignas(16) glm::mat4 mMat;
+    alignas(16) glm::mat4 nMat;
+};
+
 
 
 // The vertices data structures
@@ -82,6 +88,12 @@ struct PlanetVertex {
     glm::vec4 tan;
 };
 
+struct PlaneVertex {
+	glm::vec3 pos;
+	glm::vec3 norm;
+	glm::vec2 UV;
+};
+
 
 // MAIN ! 
 class A10 : public BaseProject {
@@ -96,6 +108,8 @@ class A10 : public BaseProject {
 
 // **A10** Place here the variable for the DescriptorSetLayout
     DescriptorSetLayout DSLPlanet;
+
+	DescriptorSetLayout DSLPlane;
     
 	// Vertex formats
 	VertexDescriptor VDBlinn;
@@ -105,6 +119,7 @@ class A10 : public BaseProject {
     
 // **A10** Place here the variable for the VertexDescriptor
     VertexDescriptor VDPlanet;
+	VertexDescriptor VDPlane;
     
 	// Pipelines [Shader couples]
 	Pipeline PBlinn;
@@ -113,6 +128,8 @@ class A10 : public BaseProject {
     
 // **A10** Place here the variable for the Pipeline
     Pipeline PPlanet;
+	Pipeline PPlane;
+
     
     
 	// Scenes and texts
@@ -137,6 +154,14 @@ class A10 : public BaseProject {
 	Texture Tbread;
 	DescriptorSet DSbread;
 
+	Model MPlane;
+	Texture TPlane;
+	DescriptorSet DSPlane;
+
+
+
+
+
 // **A10** Place here the variables for the Model, the five texture (diffuse, specular, normal map, emission and clouds) and the Descrptor Set
     Model MPlanet;
     Texture TDiffuse;
@@ -145,6 +170,7 @@ class A10 : public BaseProject {
     Texture TEmi;
     Texture TClouds;
     DescriptorSet DSPlanet;
+
 	
 	// Other application parameters
 	int currScene = 0;
@@ -205,6 +231,14 @@ class A10 : public BaseProject {
                     {5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 4, 1},
                     {6, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(NormalMapParUniformBufferObject), 1}
         });
+
+		DSLPlane.init(this, {
+			{0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, sizeof(PlaneUniformBufferObject), 1},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
+			{2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(BlinnMatParUniformBufferObject), 1}
+
+		});
+
 		// Vertex descriptors
 		VDBlinn.init(this, {
 				  {0, sizeof(BlinnVertex), VK_VERTEX_INPUT_RATE_VERTEX}
@@ -243,6 +277,18 @@ class A10 : public BaseProject {
                   {0, 3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(PlanetVertex, tan),
                          sizeof(glm::vec4), TANGENT}
                 });
+
+
+		VDPlane.init(this, {
+                  {0, sizeof(PlaneVertex), VK_VERTEX_INPUT_RATE_VERTEX}
+                }, {
+                  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(PlaneVertex, pos),
+                         sizeof(glm::vec3), POSITION},
+                  {0, 1, VK_FORMAT_R32G32B32_SFLOAT, offsetof(PlaneVertex, norm),
+                         sizeof(glm::vec3), NORMAL},
+                  {0, 2, VK_FORMAT_R32G32_SFLOAT, offsetof(PlaneVertex, UV),
+                         sizeof(glm::vec2), UV}
+                });
         
 		// Pipelines [Shader couples]
 		PBlinn.init(this, &VDBlinn,  "shaders/BlinnVert.spv",    "shaders/BlinnFrag.spv", {&DSLGlobal, &DSLBlinn});
@@ -254,7 +300,9 @@ class A10 : public BaseProject {
 //		"shaders/NormalMapVert.spv" and "shaders/NormalMapFrag.spv", it should receive the new VertexDescriptor you defined
 //		And should receive two DescriptorSetLayout, the first should be DSLGlobal, while the other must be the one you defined
         PPlanet.init(this, &VDPlanet, "shaders/NormalMapVert.spv", "shaders/NormalMapFrag.spv", {&DSLGlobal, &DSLPlanet});
-        
+		//PPlane.init(this, &VDPlane, "shaders/PlaneVert.spv", "shaders/PlaneFrag.spv", {&DSLPlane});
+        PPlane.init(this, &VDPlane,  "shaders/PlaneVert.spv",    "shaders/PlaneFrag.spv", {&DSLGlobal, &DSLPlane});
+
 		// Create models
 		Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
 		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
@@ -263,6 +311,7 @@ class A10 : public BaseProject {
 // **A10** Place here the loading of the model. It should be contained in file "models/Sphere.gltf", it should use the
 //		Vertex descriptor you defined, and be of GLTF format.
         MPlanet.init(this, &VDPlanet, "models/Sphere.gltf", GLTF);
+		MPlane.init(this, &VDPlane, "models/LargePlane.obj", OBJ);
         
 		// Create the textures
 		Tship.init(this, "textures/XwingColors.png");
@@ -270,6 +319,7 @@ class A10 : public BaseProject {
 		TskyBox.init(this, "textures/starmap_g4k.jpg");
 		Tstars.init(this, "textures/constellation_figures.png");
 		Tbread.init(this, "textures/bread001.png");
+		TPlane.init(this, "textures/Textures.png");
 // **A10** Place here the loading of the four textures
 		// Diffuse color of the planet in: "2k_earth_daymap.jpg"
         TDiffuse.init(this, "textures/2k_earth_daymap.jpg");
@@ -288,9 +338,9 @@ class A10 : public BaseProject {
 		// WARNING!!!!!!!!
 		// Must be set before initializing the text and the scene
 // **A10** Update the number of elements to correctly size the descriptor sets pool
-		DPSZs.uniformBlocksInPool = 7+3;
-		DPSZs.texturesInPool = 9;
-		DPSZs.setsInPool = 5;
+		DPSZs.uniformBlocksInPool = 9+3;
+		DPSZs.texturesInPool = 11;
+		DPSZs.setsInPool = 10;
 
 std::cout << "Initializing text\n";
 		txt.init(this, &outText);
@@ -311,11 +361,13 @@ std::cout << "Initializing text\n";
 		PskyBox.create();
 // **A10** Add the pipeline creation
         PPlanet.create();
+		PPlane.create();
 		// Here you define the data set
 		DSship.init(this, &DSLBlinn, {&Tship});
 		DSsun.init(this, &DSLEmission, {&Tsun});
 		DSskyBox.init(this, &DSLskyBox, {&TskyBox, &Tstars});
 		DSbread.init(this, &DSLBlinn, {&Tbread});
+		DSPlane.init(this, &DSLPlane, {&TPlane});
 
 // **A10** Add the descriptor set creation
 // Textures should be passed in the diffuse, specular, normal map, emission and clouds order.
@@ -335,7 +387,9 @@ std::cout << "Initializing text\n";
 		PskyBox.cleanup();
 // **A10** Add the pipeline cleanup
         PPlanet.cleanup();
-        
+        PPlane.cleanup();
+
+
 		DSship.cleanup();
 		DSsun.cleanup();
 		DSskyBox.cleanup();
@@ -343,6 +397,7 @@ std::cout << "Initializing text\n";
 		DSbread.cleanup();
 // **A10** Add the descriptor set cleanup
         DSPlanet.cleanup();
+		DSPlane.cleanup();
 		txt.pipelinesAndDescriptorSetsCleanup();
 	}
 
@@ -371,6 +426,9 @@ std::cout << "Initializing text\n";
         TNorm.cleanup();
         TEmi.cleanup();
         TClouds.cleanup();
+
+		MPlane.cleanup();
+		TPlane.cleanup();
 		
 		// Cleanup descriptor set layouts
 		DSLBlinn.cleanup();
@@ -379,12 +437,15 @@ std::cout << "Initializing text\n";
 		DSLskyBox.cleanup();
 // **A10** Add the cleanup for the descriptor set layout
         DSLPlanet.cleanup();
+		DSPlane.cleanup();
+
 		// Destroies the pipelines
 		PBlinn.destroy();
 		PEmission.destroy();
 		PskyBox.destroy();
 // **A10** Add the cleanup for the pipeline
         PPlanet.destroy();
+		PPlane.destroy();
 		txt.localCleanup();		
 	}
 	
@@ -433,6 +494,12 @@ std::cout << "Initializing text\n";
         DSPlanet.bind(commandBuffer, PPlanet, 1, currentImage);
         
         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MPlanet.indices.size()), 1, 0, 0, 0);
+
+
+		PPlane.bind(commandBuffer);
+		MPlane.bind(commandBuffer);
+		DSPlane.bind(commandBuffer, PPlane, 0, currentImage);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MPlane.indices.size()), 1, 0, 0, 0);
 
 		txt.populateCommandBuffer(commandBuffer, currentImage, currScene);
 	}
@@ -665,6 +732,17 @@ ShowTexture    = 0;
 		skyBoxUniformBufferObject sbubo{};
 		sbubo.mvpMat = M * glm::mat4(glm::mat3(Mv));
 		DSskyBox.map(currentImage, &sbubo, 0);
+
+
+		PlaneUniformBufferObject planeUbo{};
+		planeUbo.mvpMat = ViewPrj;
+		planeUbo.mMat = glm::mat4(1);
+		planeUbo.nMat = glm::mat4(1);
+		DSPlane.map(currentImage, &planeUbo, 0);
+		BlinnMatParUniformBufferObject blinnMatParUboPLANE{};
+
+		blinnMatParUboPLANE.Power = 200.0;
+		DSPlane.map(currentImage, &blinnMatParUboPLANE, 2);
 		
 // **A10** Add to compute the uniforms and pass them to the shaders. You need two uniforms: one for the matrices, and the other for the material parameters.
 
