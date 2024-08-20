@@ -67,6 +67,13 @@ struct skyBoxVertex {
 	glm::vec3 pos;
 };
 
+
+struct BreadVertex {
+	glm::vec3 pos;
+	glm::vec3 norm;
+	glm::vec2 UV;
+};
+
 // **A10** Place here the CPP struct for the vertex definition
 struct PlanetVertex {
     glm::vec3 pos;
@@ -94,6 +101,7 @@ class A10 : public BaseProject {
 	VertexDescriptor VDBlinn;
 	VertexDescriptor VDEmission;
 	VertexDescriptor VDskyBox;
+	VertexDescriptor VDBread;
     
 // **A10** Place here the variable for the VertexDescriptor
     VertexDescriptor VDPlanet;
@@ -124,6 +132,10 @@ class A10 : public BaseProject {
 	Model MskyBox;
 	Texture TskyBox, Tstars;
 	DescriptorSet DSskyBox;
+
+	Model Mbread;
+	Texture Tbread;
+	DescriptorSet DSbread;
 
 // **A10** Place here the variables for the Model, the five texture (diffuse, specular, normal map, emission and clouds) and the Descrptor Set
     Model MPlanet;
@@ -182,6 +194,7 @@ class A10 : public BaseProject {
 					{1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1},
 					{2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 1, 1}
 				  });
+				  
 // **A10** Place here the initialization of the the DescriptorSetLayout
         DSLPlanet.init(this, {
                     {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT, sizeof(PlanetUniformBufferObject), 1},
@@ -217,7 +230,6 @@ class A10 : public BaseProject {
 				  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(skyBoxVertex, pos),
 				         sizeof(glm::vec3), POSITION}
 				});
-        
 // **A10** Place here the initialization for the VertexDescriptor
         VDPlanet.init(this, {
                   {0, sizeof(PlanetVertex), VK_VERTEX_INPUT_RATE_VERTEX}
@@ -244,6 +256,7 @@ class A10 : public BaseProject {
         PPlanet.init(this, &VDPlanet, "shaders/NormalMapVert.spv", "shaders/NormalMapFrag.spv", {&DSLGlobal, &DSLPlanet});
         
 		// Create models
+		Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
 		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
 		Msun.init(this, &VDEmission, "models/Sphere.obj", OBJ);
 		MskyBox.init(this, &VDskyBox, "models/SkyBoxCube.obj", OBJ);
@@ -256,6 +269,7 @@ class A10 : public BaseProject {
 		Tsun.init(this, "textures/2k_sun.jpg");
 		TskyBox.init(this, "textures/starmap_g4k.jpg");
 		Tstars.init(this, "textures/constellation_figures.png");
+		Tbread.init(this, "textures/bread001.png");
 // **A10** Place here the loading of the four textures
 		// Diffuse color of the planet in: "2k_earth_daymap.jpg"
         TDiffuse.init(this, "textures/2k_earth_daymap.jpg");
@@ -274,7 +288,7 @@ class A10 : public BaseProject {
 		// WARNING!!!!!!!!
 		// Must be set before initializing the text and the scene
 // **A10** Update the number of elements to correctly size the descriptor sets pool
-		DPSZs.uniformBlocksInPool = 7;
+		DPSZs.uniformBlocksInPool = 7+3;
 		DPSZs.texturesInPool = 9;
 		DPSZs.setsInPool = 5;
 
@@ -301,6 +315,8 @@ std::cout << "Initializing text\n";
 		DSship.init(this, &DSLBlinn, {&Tship});
 		DSsun.init(this, &DSLEmission, {&Tsun});
 		DSskyBox.init(this, &DSLskyBox, {&TskyBox, &Tstars});
+		DSbread.init(this, &DSLBlinn, {&Tbread});
+
 // **A10** Add the descriptor set creation
 // Textures should be passed in the diffuse, specular, normal map, emission and clouds order.
         DSPlanet.init(this, &DSLPlanet, {&TDiffuse, &TSpecular, &TNorm, &TEmi, &TClouds});
@@ -324,6 +340,7 @@ std::cout << "Initializing text\n";
 		DSsun.cleanup();
 		DSskyBox.cleanup();
 		DSGlobal.cleanup();
+		DSbread.cleanup();
 // **A10** Add the descriptor set cleanup
         DSPlanet.cleanup();
 		txt.pipelinesAndDescriptorSetsCleanup();
@@ -339,10 +356,14 @@ std::cout << "Initializing text\n";
 
 		Tsun.cleanup();
 		Msun.cleanup();
+		
 
 		TskyBox.cleanup();
 		Tstars.cleanup();
 		MskyBox.cleanup();
+
+		Tbread.cleanup();
+		Mbread.cleanup();
 // **A10** Add the cleanup for models and textures
         MPlanet.cleanup();
         TDiffuse.cleanup();
@@ -376,7 +397,9 @@ std::cout << "Initializing text\n";
 		PBlinn.bind(commandBuffer);
 		
 		// The models (both index and vertex buffers)
+		Mbread.bind(commandBuffer);
 		Mship.bind(commandBuffer);
+		Mbread.bind(commandBuffer);
 		
 		// The descriptor sets, for each descriptor set specified in the pipeline
 		DSGlobal.bind(commandBuffer, PBlinn, 0, currentImage);	// The Global Descriptor Set (Set 0)
@@ -391,6 +414,7 @@ std::cout << "Initializing text\n";
 
 		PEmission.bind(commandBuffer);
 		Msun.bind(commandBuffer);
+		
 		DSsun.bind(commandBuffer, PEmission, 0, currentImage);
 		vkCmdDrawIndexed(commandBuffer,
 				static_cast<uint32_t>(Msun.indices.size()), 1, 0, 0, 0);	
@@ -632,6 +656,7 @@ ShowTexture    = 0;
 		blinnMatParUbo.Power = 200.0;
 		DSship.map(currentImage, &blinnMatParUbo, 2);
 
+		DSbread.map(currentImage, &blinnUbo, 0);
 
 		EmissionUniformBufferObject emissionUbo{};
 		emissionUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1), gubo.lightDir * 40.0f) * baseTr;
