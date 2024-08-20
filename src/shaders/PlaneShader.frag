@@ -28,7 +28,7 @@ layout(set = 1, binding = 1) uniform sampler2D tex;
 // The main shader, implementing a simple Blinn + Lambert + constant Ambient BRDF model
 // The scene is lit by a single Spot Light
 void main() {
-	vec3 Norm = normalize(fragNorm);
+	/*vec3 Norm = normalize(fragNorm);
 	vec3 EyeDir = normalize(gubo.eyePos - fragPos);
 	
 	vec3 lightDir = normalize(gubo.lightDir);
@@ -38,10 +38,10 @@ void main() {
 	vec3 Specular = vec3(pow(max(dot(Norm, normalize(lightDir + EyeDir)),0.0), mubo.Pow));
 	vec3 Ambient = texture(tex, fragUV).rgb * 0.025f;
 	
-	vec3 col  = (Diffuse + Specular) * lightColor + Ambient;
+	vec3 col  = (Diffuse + Specular) * lightColor + Ambient;*/
 	
 	outColor = vec4(col, 1.0f);
-//	outColor = vec4(gubo.eyePos/5.0+vec3(0.5),1.0);
-//	outColor = vec4(0.5*Norm+vec3(0.5),1.0);
-//	outColor = vec4(fragPos/5.0+vec3(0.5),1.0);
+	outColor = vec4(gubo.eyePos/5.0+vec3(0.5),1.0);
+	outColor = vec4(0.5*Norm+vec3(0.5),1.0);
+	outColor = vec4(fragPos/5.0+vec3(0.5),1.0);
 }

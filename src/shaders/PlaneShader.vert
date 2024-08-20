@@ -16,7 +16,7 @@ layout(location = 2) out vec2 fragUV;
 
 // Here the Uniform buffers are defined. In this case, the Transform matrices (Set 1, binding 0)
 // are used. Note that the definition must match the one used in the CPP code
-layout(set = 1, binding = 0) uniform UniformBufferObject {
+layout(set = 1, binding = 0) uniform PlaneUniformBufferObject {
 	mat4 mvpMat;
 	mat4 mMat;
 	mat4 nMat;

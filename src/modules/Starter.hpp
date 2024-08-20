@@ -25,23 +25,23 @@
 #include <chrono>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include "tiny_obj_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#include <tiny_gltf.h>
+#include "tiny_gltf.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <plusaes.hpp>
+#include "plusaes.hpp"
 
 #define SINFL_IMPLEMENTATION
-#include <sinfl.h>
+#include "sinfl.h"
 
 // For compile compatibility issues
 #define M_E			2.7182818284590452354	/* e */

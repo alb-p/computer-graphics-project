@@ -74,11 +74,11 @@ struct skyBoxVertex {
 };
 
 
-struct BreadVertex {
+/*struct BreadVertex {
 	glm::vec3 pos;
 	glm::vec3 norm;
 	glm::vec2 UV;
-};
+};*/
 
 // **A10** Place here the CPP struct for the vertex definition
 struct PlanetVertex {
@@ -115,7 +115,7 @@ class A10 : public BaseProject {
 	VertexDescriptor VDBlinn;
 	VertexDescriptor VDEmission;
 	VertexDescriptor VDskyBox;
-	VertexDescriptor VDBread;
+	//VertexDescriptor VDBread;
     
 // **A10** Place here the variable for the VertexDescriptor
     VertexDescriptor VDPlanet;
@@ -150,9 +150,9 @@ class A10 : public BaseProject {
 	Texture TskyBox, Tstars;
 	DescriptorSet DSskyBox;
 
-	Model Mbread;
+	/*Model Mbread;
 	Texture Tbread;
-	DescriptorSet DSbread;
+	DescriptorSet DSbread;*/
 
 	Model MPlane;
 	Texture TPlane;
@@ -304,7 +304,7 @@ class A10 : public BaseProject {
         PPlane.init(this, &VDPlane,  "shaders/PlaneVert.spv",    "shaders/PlaneFrag.spv", {&DSLGlobal, &DSLPlane});
 
 		// Create models
-		Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
+		//Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
 		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
 		Msun.init(this, &VDEmission, "models/Sphere.obj", OBJ);
 		MskyBox.init(this, &VDskyBox, "models/SkyBoxCube.obj", OBJ);
@@ -318,7 +318,7 @@ class A10 : public BaseProject {
 		Tsun.init(this, "textures/2k_sun.jpg");
 		TskyBox.init(this, "textures/starmap_g4k.jpg");
 		Tstars.init(this, "textures/constellation_figures.png");
-		Tbread.init(this, "textures/bread001.png");
+		//Tbread.init(this, "textures/bread001.png");
 		TPlane.init(this, "textures/Textures.png");
 // **A10** Place here the loading of the four textures
 		// Diffuse color of the planet in: "2k_earth_daymap.jpg"
@@ -333,6 +333,8 @@ class A10 : public BaseProject {
         TEmi.init(this, "textures/2k_earth_nightmap.jpg");
 		// Clouds map in: "2k_earth_clouds.jpg"
         TClouds.init(this, "textures/2k_earth_clouds.jpg");
+        
+        
 
 		// Descriptor pool sizes
 		// WARNING!!!!!!!!
@@ -366,7 +368,7 @@ std::cout << "Initializing text\n";
 		DSship.init(this, &DSLBlinn, {&Tship});
 		DSsun.init(this, &DSLEmission, {&Tsun});
 		DSskyBox.init(this, &DSLskyBox, {&TskyBox, &Tstars});
-		DSbread.init(this, &DSLBlinn, {&Tbread});
+		//DSbread.init(this, &DSLBlinn, {&Tbread});
 		DSPlane.init(this, &DSLPlane, {&TPlane});
 
 // **A10** Add the descriptor set creation
@@ -394,7 +396,7 @@ std::cout << "Initializing text\n";
 		DSsun.cleanup();
 		DSskyBox.cleanup();
 		DSGlobal.cleanup();
-		DSbread.cleanup();
+		//DSbread.cleanup();
 // **A10** Add the descriptor set cleanup
         DSPlanet.cleanup();
 		DSPlane.cleanup();
@@ -417,8 +419,9 @@ std::cout << "Initializing text\n";
 		Tstars.cleanup();
 		MskyBox.cleanup();
 
-		Tbread.cleanup();
-		Mbread.cleanup();
+		//Tbread.cleanup();
+		//Mbread.cleanup();
+        
 // **A10** Add the cleanup for models and textures
         MPlanet.cleanup();
         TDiffuse.cleanup();
@@ -458,9 +461,9 @@ std::cout << "Initializing text\n";
 		PBlinn.bind(commandBuffer);
 		
 		// The models (both index and vertex buffers)
-		Mbread.bind(commandBuffer);
+		//Mbread.bind(commandBuffer);
 		Mship.bind(commandBuffer);
-		Mbread.bind(commandBuffer);
+		//Mbread.bind(commandBuffer);
 		
 		// The descriptor sets, for each descriptor set specified in the pipeline
 		DSGlobal.bind(commandBuffer, PBlinn, 0, currentImage);	// The Global Descriptor Set (Set 0)
@@ -723,7 +726,7 @@ ShowTexture    = 0;
 		blinnMatParUbo.Power = 200.0;
 		DSship.map(currentImage, &blinnMatParUbo, 2);
 
-		DSbread.map(currentImage, &blinnUbo, 0);
+		//DSbread.map(currentImage, &blinnUbo, 0);
 
 		EmissionUniformBufferObject emissionUbo{};
 		emissionUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1), gubo.lightDir * 40.0f) * baseTr;
@@ -739,10 +742,10 @@ ShowTexture    = 0;
 		planeUbo.mMat = glm::mat4(1);
 		planeUbo.nMat = glm::mat4(1);
 		DSPlane.map(currentImage, &planeUbo, 0);
-		BlinnMatParUniformBufferObject blinnMatParUboPLANE{};
+		BlinnMatParUniformBufferObject blinnMatParUboPlane{};
 
-		blinnMatParUboPLANE.Power = 200.0;
-		DSPlane.map(currentImage, &blinnMatParUboPLANE, 2);
+		blinnMatParUboPlane.Power = 200.0;
+		DSPlane.map(currentImage, &blinnMatParUboPlane, 2);
 		
 // **A10** Add to compute the uniforms and pass them to the shaders. You need two uniforms: one for the matrices, and the other for the material parameters.
 
@@ -752,7 +755,8 @@ ShowTexture    = 0;
         PlanetUniformBufferObject planetUbo{};
         NormalMapParUniformBufferObject planetMapParUbo{};
         
-        planetUbo.mMat = glm::mat4(1);
+        planetUbo.mMat = glm::scale(glm::mat4(1), glm::vec3(100.0f, 100.0f, 100.0f));
+        //planetUbo.mMat = glm::mat4(1);
         planetUbo.nMat = glm::mat4(1);
         planetUbo.mvpMat = ViewPrj;
         
