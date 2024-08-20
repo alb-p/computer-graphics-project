@@ -305,21 +305,23 @@ class A10 : public BaseProject {
 
 		// Create models
 		//Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
+		//Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
 		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
 		Msun.init(this, &VDEmission, "models/Sphere.obj", OBJ);
 		MskyBox.init(this, &VDskyBox, "models/SkyBoxCube.obj", OBJ);
 // **A10** Place here the loading of the model. It should be contained in file "models/Sphere.gltf", it should use the
 //		Vertex descriptor you defined, and be of GLTF format.
         MPlanet.init(this, &VDPlanet, "models/Sphere.gltf", GLTF);
-		MPlane.init(this, &VDPlane, "models/LargePlane.obj", OBJ);
+		//MPlane.init(this, &VDPlane, "models/LargePlane.obj", OBJ);
+		MPlane.init(this, &VDPlane, "models/bread001.mgcg", MGCG);
         
 		// Create the textures
 		Tship.init(this, "textures/XwingColors.png");
 		Tsun.init(this, "textures/2k_sun.jpg");
 		TskyBox.init(this, "textures/starmap_g4k.jpg");
 		Tstars.init(this, "textures/constellation_figures.png");
-		//Tbread.init(this, "textures/bread001.png");
-		TPlane.init(this, "textures/Textures.png");
+		//TPlane.init(this, "textures/Textures.png");
+		TPlane.init(this, "textures/bread001.png");
 // **A10** Place here the loading of the four textures
 		// Diffuse color of the planet in: "2k_earth_daymap.jpg"
         TDiffuse.init(this, "textures/2k_earth_daymap.jpg");
@@ -340,9 +342,9 @@ class A10 : public BaseProject {
 		// WARNING!!!!!!!!
 		// Must be set before initializing the text and the scene
 // **A10** Update the number of elements to correctly size the descriptor sets pool
-		DPSZs.uniformBlocksInPool = 9+3;
-		DPSZs.texturesInPool = 11;
-		DPSZs.setsInPool = 10;
+		DPSZs.uniformBlocksInPool = 9;
+		DPSZs.texturesInPool = 10;
+		DPSZs.setsInPool = 6;
 
 std::cout << "Initializing text\n";
 		txt.init(this, &outText);
@@ -470,8 +472,7 @@ std::cout << "Initializing text\n";
 		DSship.bind(commandBuffer, PBlinn, 1, currentImage);	// The Material and Position Descriptor Set (Set 1)
 					
 		// The actual draw call.
-		vkCmdDrawIndexed(commandBuffer,
-				static_cast<uint32_t>(Mship.indices.size()), NSHIP, 0, 0, 0);	
+		vkCmdDrawIndexed(commandBuffer,static_cast<uint32_t>(Mship.indices.size()), NSHIP, 0, 0, 0);	
 
 
 
@@ -496,12 +497,14 @@ std::cout << "Initializing text\n";
         DSGlobal.bind(commandBuffer, PPlanet, 0, currentImage);
         DSPlanet.bind(commandBuffer, PPlanet, 1, currentImage);
         
-        vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MPlanet.indices.size()), 1, 0, 0, 0);
+         vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MPlanet.indices.size()), 1, 0, 0, 0);
 
 
 		PPlane.bind(commandBuffer);
 		MPlane.bind(commandBuffer);
-		DSPlane.bind(commandBuffer, PPlane, 0, currentImage);
+		DSGlobal.bind(commandBuffer, PPlane, 0, currentImage);	// The Global Descriptor Set (Set 0)
+		DSPlane.bind(commandBuffer, PPlane, 1, currentImage);
+
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MPlane.indices.size()), 1, 0, 0, 0);
 
 		txt.populateCommandBuffer(commandBuffer, currentImage, currScene);
