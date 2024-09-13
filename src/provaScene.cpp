@@ -37,10 +37,8 @@ struct Vertex {
     glm::vec3 norm;
 };
  
-#include "modules/Scene.hpp"
+ #include "modules/Scene.hpp"
  
-// #include "WVP.hpp"
-
 class A04; 
 void GameLogic(A04 *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 
@@ -364,6 +362,7 @@ std::cout << M1.indices.size();
     }
  
 };
+
 
 void GameLogic(A04 *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World) {
 	// The procedure must implement the game logic  to move the character in third person.
