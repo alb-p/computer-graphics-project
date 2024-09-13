@@ -306,22 +306,22 @@ class A10 : public BaseProject {
 		// Create models
 		//Mbread.init(this, &VDBlinn, "models/bread001.mgcg", MGCG);
 		//Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
-		Mship.init(this, &VDBlinn, "models/X-WING-baker.obj", OBJ);
+		Mship.init(this, &VDBlinn, "models/treasure_chest_obj.obj", OBJ);
 		Msun.init(this, &VDEmission, "models/Sphere.obj", OBJ);
 		MskyBox.init(this, &VDskyBox, "models/SkyBoxCube.obj", OBJ);
 // **A10** Place here the loading of the model. It should be contained in file "models/Sphere.gltf", it should use the
 //		Vertex descriptor you defined, and be of GLTF format.
         MPlanet.init(this, &VDPlanet, "models/Sphere.gltf", GLTF);
 		//MPlane.init(this, &VDPlane, "models/LargePlane.obj", OBJ);
-		MPlane.init(this, &VDPlane, "models/bread001.mgcg", MGCG);
+		MPlane.init(this, &VDPlane, "models/Castle.obj", OBJ);
         
 		// Create the textures
-		Tship.init(this, "textures/XwingColors.png");
+		Tship.init(this, "textures/chest_diffuse.png");
 		Tsun.init(this, "textures/2k_sun.jpg");
 		TskyBox.init(this, "textures/starmap_g4k.jpg");
 		Tstars.init(this, "textures/constellation_figures.png");
 		//TPlane.init(this, "textures/Textures.png");
-		TPlane.init(this, "textures/bread001.png");
+		TPlane.init(this, "textures/Castle Exterior Texture.jpg");
 // **A10** Place here the loading of the four textures
 		// Diffuse color of the planet in: "2k_earth_daymap.jpg"
         TDiffuse.init(this, "textures/2k_earth_daymap.jpg");

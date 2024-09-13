@@ -90,9 +90,9 @@ class A04 : public BaseProject {
 		initialBackgroundColor = {0.0f, 0.85f, 1.0f, 1.0f};
 		
 		// Descriptor pool sizes
-		uniformBlocksInPool = 25 * 2 + 2;
-		texturesInPool = 29 + 1;
-		setsInPool = 29 + 1;
+		DPSZs.uniformBlocksInPool = 25 * 2 + 2;
+		DPSZs.texturesInPool = 29 + 1;
+		DPSZs.uniformBlocksInPool = 29 + 1;
 
 		Ar = 4.0f / 3.0f;
 	}
