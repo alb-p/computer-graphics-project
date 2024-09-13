@@ -58,9 +58,6 @@ struct TextMaker {
 		createTextDescriptorSetAndVertexLayout();
 		createTextPipeline();
 		createTextModelAndTexture();
-		
-		BP->DPSZs.texturesInPool += 1;
-		BP->DPSZs.setsInPool += 1;
 	}
 
 
@@ -74,7 +71,7 @@ struct TextMaker {
 				         sizeof(glm::vec2), UV}
 				});
 		DSL.init(BP,
-				{{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT, 0, 1}});
+				{{0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}});
 	}
 
 
@@ -199,15 +196,15 @@ struct TextMaker {
 			tpx = 0;
 			tpy = 0;
 			Txt.len = ib - Txt.start;
-		}
-		
-//		std::cout << "[Text] Vertices: " << (M.vertices.size()/VD.Bindings[0].stride)
-//				  << ", Indices: " << M.indices.size() << "\n";
-		std::cout << "[Text] ";
+		}		
+		std::cout << "Text: " << M.vertices.size()
+				  << ", I: " << M.indices.size() << "\n";
 	}
 
 	void createTextDescriptorSets() {
-		DS.init(BP, &DSL, {&T});
+		DS.init(BP, &DSL, {
+					{0, TEXTURE, 0, &T}
+				});
 	}
 
 	void pipelinesAndDescriptorSetsInit() {

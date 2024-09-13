@@ -1,50 +1,14 @@
 
-struct PipelineInstances;
-
-struct Instance {
+typedef struct {
 	std::string *id;
 	int Mid;
-	int NTx;
-	int Iid;
-	int *Tid;
-	DescriptorSet **DS;
-	std::vector<DescriptorSetLayout *> *D;
-	int NDs;
-	
+	int Tid;
 	glm::mat4 Wm;
-	PipelineInstances *PI;
-} ;
-
-struct PipelineRef {
-	std::string *id;
-	Pipeline *P;
-	VertexDescriptor *VD;
-
-	void init(const char *_id, Pipeline * _P, VertexDescriptor * _VD) {
-		id = new std::string(_id);
-		P = _P;
-		VD = _VD;
-	}} ;
-
-struct VertexDescriptorRef {
-	std::string *id;
-	VertexDescriptor *VD;
-	
-	void init(const char *_id, VertexDescriptor * _VD) {
-		id = new std::string(_id);
-		VD = _VD;
-	}
-} ;
-
-struct PipelineInstances {
-	Instance *I;
-	int InstanceCount;
-	PipelineRef *P;
-} ;
-
+} Instance;
 
 class Scene {
 	public:
+	VertexDescriptor *VD;	
 	
 	BaseProject *BP;
 
@@ -62,29 +26,13 @@ class Scene {
 	
 	// Descriptor sets and instances
 	int InstanceCount = 0;
-
-	Instance **I;
-	VertexDescriptorRef *VRef;
+	DescriptorSet **DS;
+	Instance *I;
 	std::unordered_map<std::string, int> InstanceIds;
 
-	// Pipelines, DSL and Vertex Formats
-	std::unordered_map<std::string, PipelineRef *> PipelineIds;
-	int PipelineInstanceCount = 0;
-	PipelineInstances *PI;
-	std::unordered_map<std::string, VertexDescriptor *> VDIds;
-
-
-	int init(BaseProject *_BP,  std::vector<VertexDescriptorRef>  &VDRs,  
-			  std::vector<PipelineRef> &PRs, std::string file) {
+	void init(BaseProject *_BP, VertexDescriptor *VD, DescriptorSetLayout &DSL, 
+			  Pipeline &P, std::string file) {
 		BP = _BP;
-		
-		for(int i = 0; i < VDRs.size(); i++) {
-			VDIds[*VDRs[i].id] = VDRs[i].VD;
-		}
-		for(int i = 0; i < PRs.size(); i++) {
-			PipelineIds[*PRs[i].id] = &PRs[i];
-		}
-
 		// Models, textures and Descriptors (values assigned to the uniforms)
 		nlohmann::json js;
 		std::ifstream ifs("models/scene.json");
@@ -92,11 +40,11 @@ class Scene {
 		  std::cout << "Error! Scene file not found!";
 		  exit(-1);
 		}
-//		try {
+		try {
 			std::cout << "Parsing JSON\n";
 			ifs >> js;
 			ifs.close();
-			std::cout << "\nScene contains " << js.size() << " definitions sections\n\n";
+			std::cout << "\n\n\nScene contains " << js.size() << " definitions sections\n\n\n";
 			
 			// MODELS
 			nlohmann::json ms = js["models"];
@@ -107,10 +55,9 @@ class Scene {
 			for(int k = 0; k < ModelCount; k++) {
 				MeshIds[ms[k]["id"]] = k;
 				std::string MT = ms[k]["format"].template get<std::string>();
-				std::string VDN = ms[k]["VD"].template get<std::string>();
-
 				M[k] = new Model();
-				M[k]->init(BP, VDIds[VDN], ms[k]["model"], (MT[0] == 'O') ? OBJ : ((MT[0] == 'G') ? GLTF : MGCG));
+
+				M[k]->init(BP, VD, ms[k]["model"], (MT[0] == 'O') ? OBJ : ((MT[0] == 'G') ? GLTF : MGCG));
 			}
 			
 			// TEXTURES
@@ -121,130 +68,52 @@ class Scene {
 			T = (Texture **)calloc(ModelCount, sizeof(Texture *));
 			for(int k = 0; k < TextureCount; k++) {
 				TextureIds[ts[k]["id"]] = k;
-				std::string TT = ts[k]["format"].template get<std::string>();
-
 				T[k] = new Texture();
-				if(TT[0] == 'C') {
-					T[k]->init(BP, ts[k]["texture"]);
-				} else if(TT[0] == 'D') {
-					T[k]->init(BP, ts[k]["texture"], VK_FORMAT_R8G8B8A8_UNORM);
-				} else {
-					std::cout << "FORMAT UNKNOWN: " << TT << "\n";
-				}
-std::cout << ts[k]["id"] << "(" << k << ") " << TT << "\n";
+
+				T[k]->init(BP, ts[k]["texture"]);
 			}
 
 			// INSTANCES TextureCount
-			nlohmann::json pis = js["instances"];
-			PipelineInstanceCount = pis.size();
-std::cout << "Pipeline Instances count: " << PipelineInstanceCount << "\n";
-			PI = (PipelineInstances *)calloc(PipelineInstanceCount, sizeof(PipelineInstances));
-			InstanceCount = 0;
+			nlohmann::json is = js["instances"];
+			InstanceCount = is.size();
+			std::cout << "Instances count: " << InstanceCount << "\n";
 
-			for(int k = 0; k < PipelineInstanceCount; k++) {
-				std::string Pid = pis[k]["pipeline"].template get<std::string>();
-				
-				PI[k].P = PipelineIds[Pid];
-				nlohmann::json is = pis[k]["elements"];
-				PI[k].InstanceCount = is.size();
-std::cout << "Pipeline: " << Pid << "(" << k << "), Instances count: " << PI[k].InstanceCount << "\n";
-				PI[k].I = (Instance *)calloc(PI[k].InstanceCount, sizeof(Instance));
-				
-				for(int j = 0; j < PI[k].InstanceCount; j++) {
-				
-std::cout << k << "." << j << "\t" << is[j]["id"] << ", " << is[j]["model"] << "(" << MeshIds[is[j]["model"]] << "), {";
-					PI[k].I[j].id  = new std::string(is[j]["id"]);
-					PI[k].I[j].Mid = MeshIds[is[j]["model"]];
-					int NTextures = is[j]["texture"].size();
-					PI[k].I[j].NTx = NTextures;
-					PI[k].I[j].Tid = (int *)calloc(NTextures, sizeof(int));
-std::cout << "#" << NTextures;
-					for(int h = 0; h < NTextures; h++) {
-						PI[k].I[j].Tid[h] = TextureIds[is[j]["texture"][h]];
-std::cout << " " << is[j]["texture"][h] << "(" << PI[k].I[j].Tid[h] << ")";
-					}
-std::cout << "}\n";
-					nlohmann::json TMjson = is[j]["transform"];
-					float TMj[16];
-					for(int h = 0; h < 16; h++) {TMj[h] = TMjson[h];}
-					PI[k].I[j].Wm = glm::mat4(TMj[0],TMj[4],TMj[8],TMj[12],TMj[1],TMj[5],TMj[9],TMj[13],TMj[2],TMj[6],TMj[10],TMj[14],TMj[3],TMj[7],TMj[11],TMj[15]);
-					
-					PI[k].I[j].PI = &PI[k];
-					PI[k].I[j].D = &PI[k].P->P->D;
-					PI[k].I[j].NDs = PI[k].I[j].D->size();
-					BP->DPSZs.setsInPool += PI[k].I[j].NDs;
-
-					for(int h = 0; h < PI[k].I[j].NDs; h++) {
-						DescriptorSetLayout *DSL = (*PI[k].I[j].D)[h];
-						int DSLsize = DSL->Bindings.size();
-
-						for (int l = 0; l < DSLsize; l++) {
-							if(DSL->Bindings[l].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-								BP->DPSZs.uniformBlocksInPool += 1;
-							} else {
-								BP->DPSZs.texturesInPool += 1;
-							}
-						}
-					}
-					InstanceCount++;
-				}
+			DS = (DescriptorSet **)calloc(InstanceCount, sizeof(DescriptorSet *));
+			I =  (Instance *)calloc(InstanceCount, sizeof(Instance));
+			for(int k = 0; k < InstanceCount; k++) {
+std::cout << k << "\t" << is[k]["id"] << ", " << is[k]["model"] << "(" << MeshIds[is[k]["model"]] << "), " << is[k]["texture"] << "(" << TextureIds[is[k]["texture"]] << ")\n";
+				InstanceIds[is[k]["id"]] = k;
+				I[k].id  = new std::string(is[k]["id"]);
+				I[k].Mid = MeshIds[is[k]["model"]];
+				I[k].Tid = TextureIds[is[k]["texture"]];
+				nlohmann::json TMjson = is[k]["transform"];
+				float TMj[16];
+				for(int l = 0; l < 16; l++) {TMj[l] = TMjson[l];}
+				I[k].Wm = glm::mat4(TMj[0],TMj[4],TMj[8],TMj[12],TMj[1],TMj[5],TMj[9],TMj[13],TMj[2],TMj[6],TMj[10],TMj[14],TMj[3],TMj[7],TMj[11],TMj[15]);
 			}			
-
-std::cout << "Creating instances\n";
-			I =  (Instance **)calloc(InstanceCount, sizeof(Instance *));
-
-			int i = 0;
-			for(int k = 0; k < PipelineInstanceCount; k++) {
-				for(int j = 0; j < PI[k].InstanceCount; j++) {
-					I[i] = &PI[k].I[j];
-					InstanceIds[*I[i]->id] = i;
-					I[i]->Iid = i;
-					
-					i++;
-				}
-			}
-std::cout << i << " instances created\n";
-
-
-/*		} catch (const nlohmann::json::exception& e) {
-			std::cout << "\n\n\nException while parsing JSON file: " << file << "\n";
-			std::cout << e.what() << '\n' << '\n';
-			std::cout << std::flush;
-			return 1;
+		} catch (const nlohmann::json::exception& e) {
+			std::cout << e.what() << '\n';
 		}
-*/
-std::cout << "Leaving scene loading and creation\n";		
-		return 0;
 	}
 
 
-	void pipelinesAndDescriptorSetsInit() {
-std::cout << "Scene DS init\n";
+	void pipelinesAndDescriptorSetsInit(DescriptorSetLayout &DSL) {
 		for(int i = 0; i < InstanceCount; i++) {
-std::cout << "I: " << i << ", NTx: " << I[i]->NTx << ", NDs: " << I[i]->NDs << "\n";
-			Texture **Tids = (Texture **)calloc(I[i]->NTx, sizeof(Texture *));
-			for(int j = 0; j < I[i]->NTx; j++) {
-				Tids[j] = T[I[i]->Tid[j]];
-			}
-
-			I[i]->DS = (DescriptorSet **)calloc(I[i]->NDs, sizeof(DescriptorSet *));
-			for(int j = 0; j < I[i]->NDs; j++) {
-				I[i]->DS[j] = new DescriptorSet();
-				I[i]->DS[j]->init(BP, (*I[i]->D)[j], Tids);
-			}
-			free(Tids);
+			DS[i] = new DescriptorSet();
+			DS[i]->init(BP, &DSL, {
+					{0, UNIFORM, sizeof(UniformBufferObject), nullptr},
+					{1, TEXTURE, 0, T[I[i].Tid]},
+					{2, UNIFORM, sizeof(GlobalUniformBufferObject), nullptr}
+				});
 		}
-std::cout << "Scene DS init Done\n";
 	}
 	
 	void pipelinesAndDescriptorSetsCleanup() {
 		// Cleanup datasets
 		for(int i = 0; i < InstanceCount; i++) {
-			for(int j = 0; j < I[i]->NDs; j++) {
-				I[i]->DS[j]->cleanup();
-				delete I[i]->DS[j];
-			}
-			free(I[i]->DS);
+			DS[i]->cleanup();
+			delete DS[i];
+			//delete DS[i];
 		}
 	}
 
@@ -263,36 +132,20 @@ std::cout << "Scene DS init Done\n";
 		}
 		free(M);
 		
+		free(DS);
 		for(int i = 0; i < InstanceCount; i++) {
-			delete I[i]->id;
-			free(I[i]->Tid);
+			delete I[i].id;
 		}
 		free(I);
-		
-		// To add: delete the also the datastructure relative to the pipeline
-		for(int i = 0; i < PipelineInstanceCount; i++) {
-			free(PI[i].I);
-		}
-		free(PI);
 	}
 	
-    void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage) {
-		for(int k = 0; k < PipelineInstanceCount; k++) {
-			for(int i = 0; i < PI[k].InstanceCount; i++) {
-				Pipeline *P = PI[k].I[i].PI->P->P;
-				P->bind(commandBuffer);
-
-	//std::cout << "Drawing Instance " << i << "\n";
-				M[PI[k].I[i].Mid]->bind(commandBuffer);
-	//std::cout << "Binding DS: " << DS[i] << "\n";
-				for(int j = 0; j < PI[k].I[i].NDs; j++) {
-					PI[k].I[i].DS[j]->bind(commandBuffer, *P, j, currentImage);
-				}
-
-	//std::cout << "Draw Call\n";						
-				vkCmdDrawIndexed(commandBuffer,
-						static_cast<uint32_t>(M[PI[k].I[i].Mid]->indices.size()), 1, 0, 0, 0);
-			}
+    void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage, Pipeline &P) {
+		for(int i = 0; i < InstanceCount; i++) {
+			M[I[i].Mid]->bind(commandBuffer);
+			DS[i]->bind(commandBuffer, P, 0, currentImage);
+						
+			vkCmdDrawIndexed(commandBuffer,
+					static_cast<uint32_t>(M[I[i].Mid]->indices.size()), 1, 0, 0, 0);
 		}
 	}
 };

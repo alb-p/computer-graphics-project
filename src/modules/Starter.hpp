@@ -25,23 +25,25 @@
 #include <chrono>
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#include "tiny_obj_loader.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include "stb_image.h"
 
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#define TINYGLTF_NOEXCEPTION
+#define JSON_NOEXCEPTION
 #define TINYGLTF_NO_INCLUDE_STB_IMAGE
-#include <tiny_gltf.h>
+#include "tiny_gltf.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <plusaes.hpp>
+#include "plusaes.hpp"
 
 #define SINFL_IMPLEMENTATION
-#include <sinfl.h>
+#include "sinfl.h"
 
 // For compile compatibility issues
 #define M_E			2.7182818284590452354	/* e */
@@ -231,7 +233,6 @@ class Model {
 	VertexDescriptor *VD;
 
 	public:
-	glm::mat4 Wm;
 	std::vector<unsigned char> vertices{};
 	std::vector<uint32_t> indices{};
 	void loadModelOBJ(std::string file);
@@ -255,7 +256,7 @@ struct Texture {
 	int imgs;
 	static const int maxImgs = 6;
 	
-	void createTextureImage(std::vector<std::string>files, VkFormat Fmt);
+	void createTextureImage(std::string files[], VkFormat Fmt);
 	void createTextureImageView(VkFormat Fmt);
 	void createTextureSampler(VkFilter magFilter,
 							 VkFilter minFilter,
@@ -268,7 +269,7 @@ struct Texture {
 							);
 
 	void init(BaseProject *bp, std::string file, VkFormat Fmt, bool initSampler);
-	void initCubic(BaseProject *bp, std::vector<std::string>, VkFormat Fmt);
+	void initCubic(BaseProject *bp, std::string files[6]);
 	void cleanup();
 };
 
@@ -276,16 +277,12 @@ struct DescriptorSetLayoutBinding {
 	uint32_t binding;
 	VkDescriptorType type;
 	VkShaderStageFlags flags;
-	int linkSize;
-	int count;
 };
 
 
 struct DescriptorSetLayout {
 	BaseProject *BP;
  	VkDescriptorSetLayout descriptorSetLayout;
-	std::vector<DescriptorSetLayoutBinding> Bindings;
-	int imgInfoSize;
  	
  	void init(BaseProject *bp, std::vector<DescriptorSetLayoutBinding> B);
 	void cleanup();
@@ -320,29 +317,31 @@ struct Pipeline {
 	void cleanup();
 };
 
+enum DescriptorSetElementType {UNIFORM, TEXTURE};
+
+struct DescriptorSetElement {
+	int binding;
+	DescriptorSetElementType type;
+	int size;
+	Texture *tex;
+};
+
 struct DescriptorSet {
 	BaseProject *BP;
 
 	std::vector<std::vector<VkBuffer>> uniformBuffers;
 	std::vector<std::vector<VkDeviceMemory>> uniformBuffersMemory;
 	std::vector<VkDescriptorSet> descriptorSets;
-	DescriptorSetLayout *Layout;
 	
 	std::vector<bool> toFree;
 
 	void init(BaseProject *bp, DescriptorSetLayout *L,
-						 std::vector<Texture *>Txs);
+		std::vector<DescriptorSetElement> E);
 	void cleanup();
   	void bind(VkCommandBuffer commandBuffer, Pipeline &P, int setId, int currentImage);
-  	void map(int currentImage, void *src, int slot);
+  	void map(int currentImage, void *src, int size, int slot);
 };
 
-
-struct PoolSizes {
-	int uniformBlocksInPool = 0;
-	int texturesInPool = 0;
-	int setsInPool = 0;
-};
 
 // MAIN ! 
 class BaseProject {
@@ -364,14 +363,15 @@ public:
         cleanup();
     }
 
-	PoolSizes DPSZs;
-
 protected:
 	uint32_t windowWidth;
 	uint32_t windowHeight;
 	bool windowResizable;
 	std::string windowTitle;
 	VkClearColorValue initialBackgroundColor;
+	int uniformBlocksInPool;
+	int texturesInPool;
+	int setsInPool;
 
     GLFWwindow* window;
     VkInstance instance;
@@ -453,9 +453,9 @@ protected:
 		createColorResources();
 		createDepthResources();			
 		createFramebuffers();			
-		localInit();
-
 		createDescriptorPool();			
+
+		localInit();
 		pipelinesAndDescriptorSetsInit();
 
 		createCommandBuffers();			
@@ -845,7 +845,6 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		VkPhysicalDeviceFeatures deviceFeatures{};
 		deviceFeatures.samplerAnisotropy = VK_TRUE;
 		deviceFeatures.sampleRateShading = VK_TRUE;
-		deviceFeatures.fillModeNonSolid  = VK_TRUE;
 		
 		VkDeviceCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1502,17 +1501,17 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 	void createDescriptorPool() {
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(DPSZs.uniformBlocksInPool *
+		poolSizes[0].descriptorCount = static_cast<uint32_t>(uniformBlocksInPool *
 															 swapChainImages.size());
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(DPSZs.texturesInPool *
+		poolSizes[1].descriptorCount = static_cast<uint32_t>(texturesInPool *
 															 swapChainImages.size());
 															 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());;
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(DPSZs.setsInPool * swapChainImages.size());
+		poolInfo.maxSets = static_cast<uint32_t>(setsInPool * swapChainImages.size());
 		
 		VkResult result = vkCreateDescriptorPool(device, &poolInfo, nullptr,
 									&descriptorPool);
@@ -1813,11 +1812,11 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		}
 	}
 		
-	void getSixAxis(float &deltaT,
-					glm::vec3 &m,
-					glm::vec3 &r,
-					bool &fire) {
-						
+	// Public part of the base class
+	public:
+
+	
+	void getSixAxis(float &deltaT, glm::vec3 &m, glm::vec3 &r, bool &fire) {
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		static float lastTime = 0.0f;
 		
@@ -1886,8 +1885,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		handleGamePad(GLFW_JOYSTICK_4,m,r,fire);
 	}
 	
-	// Public part of the base class
-	public:
+	
 	// Debug commands
 	void printFloat(const char *Name, float v) {
 		std::cout << "float " << Name << " = " << v << ";\n";
@@ -1913,12 +1911,9 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 				std::cout << v[i/4][i%4] << ((i<15) ? ", " : ");\n");
 			}
 	}
-	void printQuat(const char *Name, glm::quat q) {
-		std::cout << "glm::vec3 " << Name << " = glm::vec3(" << q[0] << ", " << q[1] << ", " << q[2] << ", " << q[3] << ");\n";
-	}
 
 	// to support screenshot
-	// Taken from the Sasha Willem sample by copy&paste
+	// Taken from the Sasha Willem sample by copy&past
 	// This could be better integrated in the code, but for the moment,
 	// i cannot afford to do it, so it stays like this, even if it is awful!	
 	private:
@@ -2479,7 +2474,7 @@ void Model::loadModelOBJ(std::string file) {
 		throw std::runtime_error(warn + err);
 	}
 	
-//	std::cout << "Building\n";	
+	std::cout << "Building\n";	
 //	std::cout << "Position " << VD->Position.hasIt << "," << VD->Position.offset << "\n";	
 //	std::cout << "UV " << VD->UV.hasIt << "," << VD->UV.offset << "\n";	
 //	std::cout << "Normal " << VD->Normal.hasIt << "," << VD->Normal.offset << "\n";
@@ -2530,8 +2525,8 @@ void Model::loadModelOBJ(std::string file) {
 			indices.push_back((vertices.size()/mainStride)-1);
 		}
 	}
-	std::cout << "[OBJ] Vertices: "<< (vertices.size()/mainStride);
-	std::cout << " Indices: "<< indices.size() << "\n";
+	std::cout << "[OBJ] Vertices: "<< vertices.size() << "\n";
+	std::cout << "Indices: "<< indices.size() << "\n";
 	
 }
 
@@ -2540,8 +2535,6 @@ void Model::loadModelGLTF(std::string file, bool encoded) {
 	tinygltf::TinyGLTF loader;
 	std::string warn, err;
 	
-	int mainStride = VD->Bindings[0].stride;
-
 	std::cout << "Loading : " << file << (encoded ? "[MGCG]" : "[GLTF]") << "\n";	
 	if(encoded) {
 		auto modelString = readFile(file);
@@ -2660,6 +2653,7 @@ void Model::loadModelGLTF(std::string file, bool encoded) {
 				}
 			}
 
+			int mainStride = VD->Bindings[0].stride;
 //std::cout << "making vertex array. Stride:" << mainStride << "\n";
 			for(int i = 0; i < cntTot; i++) {
 				std::vector<unsigned char> vertex(mainStride, 0);
@@ -2744,47 +2738,8 @@ void Model::loadModelGLTF(std::string file, bool encoded) {
 		}
 	}
 
-	std::cout << (encoded ? "[MGCG]" : "[GLTF]") << " Vertices: " << (vertices.size()/mainStride)
-			  << " Indices: " << indices.size() << "\n";
-/*
-std::cout << model.nodes[0].translation.size() << "\n";
-std::cout << model.nodes[0].rotation.size() << "\n";
-std::cout << model.nodes[0].scale.size() << "\n";
-*/
-				glm::vec3 T;
-				glm::vec3 S;
-				glm::quat Q;
-				if(model.nodes[0].translation.size() > 0) {
-//std::cout << "node " << i << " has T\n";
-					T = glm::vec3(model.nodes[0].translation[0],
-								  model.nodes[0].translation[1],
-								  model.nodes[0].translation[2]);
-				} else {
-					T = glm::vec3(0);
-				}
-				if(model.nodes[0].rotation.size() > 0) {
-//std::cout << "node " << i << " has Q\n";
-					Q = glm::quat(model.nodes[0].rotation[3],
-								  model.nodes[0].rotation[0],
-								  model.nodes[0].rotation[1],
-								  model.nodes[0].rotation[2]);
-				} else {
-					Q = glm::quat(1.0f,0.0f,0.0f,0.0f);
-				}
-				if(model.nodes[0].scale.size() > 0) {
-//std::cout << "node " << i << " has S\n";
-					S = glm::vec3(model.nodes[0].scale[0],
-								  model.nodes[0].scale[1],
-								  model.nodes[0].scale[2]);
-				} else {
-					S = glm::vec3(1);
-				}
-//printVec3("T",T);
-//printQuat("Q",Q);
-//printVec3("S",S);
-				Wm = glm::translate(glm::mat4(1), T) *
-						 glm::mat4(Q) *
-						 glm::scale(glm::mat4(1), S);
+	std::cout << (encoded ? "[MGCG]" : "[GLTF]") << " Vertices: " << vertices.size()
+			  << "\nIndices: " << indices.size() << "\n";
 }
 
 void Model::createVertexBuffer() {
@@ -2821,17 +2776,14 @@ void Model::initMesh(BaseProject *bp, VertexDescriptor *vd) {
 	VD = vd;
 	int mainStride = VD->Bindings[0].stride;
 	std::cout << "[Manual] Vertices: " << (vertices.size()/mainStride)
-			  << " Indices: " << indices.size() << "\n";
+			  << "\nIndices: " << indices.size() << "\n";
 	createVertexBuffer();
 	createIndexBuffer();
-	Wm = glm::mat4(1);
 }
 
 void Model::init(BaseProject *bp, VertexDescriptor *vd, std::string file, ModelType MT) {
 	BP = bp;
 	VD = vd;
-	Wm = glm::mat4(1);
-
 	if(MT == OBJ) {
 		loadModelOBJ(file);
 	} else if(MT == GLTF) {
@@ -2866,7 +2818,7 @@ void Model::bind(VkCommandBuffer commandBuffer) {
 
 
 
-void Texture::createTextureImage(std::vector<std::string>files, VkFormat Fmt = VK_FORMAT_R8G8B8A8_SRGB) {
+void Texture::createTextureImage(std::string files[], VkFormat Fmt = VK_FORMAT_R8G8B8A8_SRGB) {
 	int texWidth, texHeight, texChannels;
 	int curWidth = -1, curHeight = -1, curChannels = -1;
 	stbi_uc* pixels[maxImgs];
@@ -2982,9 +2934,10 @@ void Texture::createTextureSampler(
 
 
 void Texture::init(BaseProject *bp, std::string file, VkFormat Fmt = VK_FORMAT_R8G8B8A8_SRGB, bool initSampler = true) {
+	std::string files[1] = {file};
 	BP = bp;
 	imgs = 1;
-	createTextureImage({file}, Fmt);
+	createTextureImage(files, Fmt);
 	createTextureImageView(Fmt);
 	if(initSampler) {
 		createTextureSampler();
@@ -2992,15 +2945,11 @@ void Texture::init(BaseProject *bp, std::string file, VkFormat Fmt = VK_FORMAT_R
 }
 
 
-void Texture::initCubic(BaseProject *bp, std::vector<std::string>files, VkFormat Fmt = VK_FORMAT_R8G8B8A8_SRGB) {
-	if(files.size() != 6) {
-		std::cout << "\nError! Cube map without 6 files - " << files.size() << "\n";
-		exit(0);
-	}
+void Texture::initCubic(BaseProject *bp, std::string files[6]) {
 	BP = bp;
 	imgs = 6;
-	createTextureImage(files, Fmt);
-	createTextureImageView(Fmt);
+	createTextureImage(files);
+	createTextureImageView();
 	createTextureSampler();
 }
 
@@ -3042,10 +2991,8 @@ void Pipeline::init(BaseProject *bp, VertexDescriptor *vd,
 	D = d;
 }
 
-void Pipeline::setAdvancedFeatures(VkCompareOp _compareOp,
-								   VkPolygonMode _polyModel,
- 								   VkCullModeFlagBits _CM,
-								   bool _transp) {
+void Pipeline::setAdvancedFeatures(VkCompareOp _compareOp, VkPolygonMode _polyModel,
+ 								   VkCullModeFlagBits _CM, bool _transp) {
  	compareOp = _compareOp;
  	polyModel = _polyModel;
  	CM = _CM;
@@ -3264,26 +3211,21 @@ void Pipeline::cleanup() {
 
 void DescriptorSetLayout::init(BaseProject *bp, std::vector<DescriptorSetLayoutBinding> B) {
 	BP = bp;
-	Bindings = B;
-	imgInfoSize = 0;
 	
-	std::vector<VkDescriptorSetLayoutBinding> binds;
-	binds.resize(B.size());
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+	bindings.resize(B.size());
 	for(int i = 0; i < B.size(); i++) {
-		binds[i].binding = B[i].binding;
-		binds[i].descriptorType = B[i].type;
-		binds[i].descriptorCount = B[i].count;
-		binds[i].stageFlags = B[i].flags;
-		binds[i].pImmutableSamplers = nullptr;
-		if((B[i].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) && (B[i].linkSize + B[i].count > imgInfoSize)) {
-			imgInfoSize = B[i].linkSize + B[i].count;
-		}
+		bindings[i].binding = B[i].binding;
+		bindings[i].descriptorType = B[i].type;
+		bindings[i].descriptorCount = 1;
+		bindings[i].stageFlags = B[i].flags;
+		bindings[i].pImmutableSamplers = nullptr;
 	}
 	
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(binds.size());;
-	layoutInfo.pBindings = binds.data();
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());;
+	layoutInfo.pBindings = bindings.data();
 	
 	VkResult result = vkCreateDescriptorSetLayout(BP->device, &layoutInfo,
 								nullptr, &descriptorSetLayout);
@@ -3298,27 +3240,19 @@ void DescriptorSetLayout::cleanup() {
 }
 
 void DescriptorSet::init(BaseProject *bp, DescriptorSetLayout *DSL,
-						 std::vector<Texture *>Txs) {
+						 std::vector<DescriptorSetElement> E) {
 	BP = bp;
-	Layout = DSL;
 	
-	int size = DSL->Bindings.size();
-	int imgInfoSize = DSL->imgInfoSize;
-//std::cout << "imgInfoSize: " << imgInfoSize << "(" << size << ")\n";
-	
-	uniformBuffers.resize(size);
-	uniformBuffersMemory.resize(size);
-	toFree.resize(size);
+	uniformBuffers.resize(E.size());
+	uniformBuffersMemory.resize(E.size());
+	toFree.resize(E.size());
 
-//std::cout << "Descriptor set init: " << E.size() << "\n";
-	for (int j = 0; j < size; j++) {
+	for (int j = 0; j < E.size(); j++) {
 		uniformBuffers[j].resize(BP->swapChainImages.size());
 		uniformBuffersMemory[j].resize(BP->swapChainImages.size());
-//std::cout << j << " " << E[j].type << "\n";
-		if(DSL->Bindings[j].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
-//std::cout << "Uniform size: " << E[j].size << "\n";
+		if(E[j].type == UNIFORM) {
 			for (size_t i = 0; i < BP->swapChainImages.size(); i++) {
-				VkDeviceSize bufferSize = DSL->Bindings[j].linkSize;
+				VkDeviceSize bufferSize = E[j].size;
 				BP->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 									 	 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
 									 	 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -3348,39 +3282,35 @@ void DescriptorSet::init(BaseProject *bp, DescriptorSetLayout *DSL,
 	}
 	
 	for (size_t i = 0; i < BP->swapChainImages.size(); i++) {
-		std::vector<VkWriteDescriptorSet> descriptorWrites(size);
-		std::vector<VkDescriptorBufferInfo> bufferInfo(size);
-		std::vector<VkDescriptorImageInfo> imageInfo(imgInfoSize);
-		for (int j = 0; j < size; j++) {
-			if(DSL->Bindings[j].type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) {
+		std::vector<VkWriteDescriptorSet> descriptorWrites(E.size());
+		std::vector<VkDescriptorBufferInfo> bufferInfo(E.size());
+		std::vector<VkDescriptorImageInfo> imageInfo(E.size());
+		for (int j = 0; j < E.size(); j++) {
+			if(E[j].type == UNIFORM) {
 				bufferInfo[j].buffer = uniformBuffers[j][i];
 				bufferInfo[j].offset = 0;
-				bufferInfo[j].range = DSL->Bindings[j].linkSize;
+				bufferInfo[j].range = E[j].size;
 				
 				descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				descriptorWrites[j].dstSet = descriptorSets[i];
-				descriptorWrites[j].dstBinding = DSL->Bindings[j].binding;
+				descriptorWrites[j].dstBinding = E[j].binding;
 				descriptorWrites[j].dstArrayElement = 0;
 				descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-				descriptorWrites[j].descriptorCount = DSL->Bindings[j].count;
+				descriptorWrites[j].descriptorCount = 1;
 				descriptorWrites[j].pBufferInfo = &bufferInfo[j];
-			} else if(DSL->Bindings[j].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
-				for(int k = 0; k < DSL->Bindings[j].count; k++) {
-					int h = DSL->Bindings[j].linkSize + k;
-					Texture *Tx = Txs[h];
-					imageInfo[h].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					imageInfo[h].imageView = Tx->textureImageView;
-					imageInfo[h].sampler = Tx->textureSampler;
-				}
+			} else if(E[j].type == TEXTURE) {
+				imageInfo[j].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo[j].imageView = E[j].tex->textureImageView;
+				imageInfo[j].sampler = E[j].tex->textureSampler;
 		
 				descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 				descriptorWrites[j].dstSet = descriptorSets[i];
-				descriptorWrites[j].dstBinding = DSL->Bindings[j].binding;
+				descriptorWrites[j].dstBinding = E[j].binding;
 				descriptorWrites[j].dstArrayElement = 0;
 				descriptorWrites[j].descriptorType =
 											VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				descriptorWrites[j].descriptorCount = DSL->Bindings[j].count;
-				descriptorWrites[j].pImageInfo = &imageInfo[DSL->Bindings[j].linkSize];
+				descriptorWrites[j].descriptorCount = 1;
+				descriptorWrites[j].pImageInfo = &imageInfo[j];
 			}
 		}		
 		vkUpdateDescriptorSets(BP->device,
@@ -3402,17 +3332,14 @@ void DescriptorSet::cleanup() {
 
 void DescriptorSet::bind(VkCommandBuffer commandBuffer, Pipeline &P, int setId,
 						 int currentImage) {
-//std::cout << "DS[ci]: " << &descriptorSets[currentImage] << "\n";
 	vkCmdBindDescriptorSets(commandBuffer,
 					VK_PIPELINE_BIND_POINT_GRAPHICS,
 					P.pipelineLayout, setId, 1, &descriptorSets[currentImage],
 					0, nullptr);
 }
 
-void DescriptorSet::map(int currentImage, void *src, int slot) {
+void DescriptorSet::map(int currentImage, void *src, int size, int slot) {
 	void* data;
-
-	int size = Layout->Bindings[slot].linkSize;
 
 	vkMapMemory(BP->device, uniformBuffersMemory[slot][currentImage], 0,
 						size, 0, &data);

@@ -1,12 +1,12 @@
 CFLAGS = -std=c++17 -O2
 LDFLAGS = -lglfw -lvulkan -ldl -lpthread -lX11 -lXrandr -lXi
-A10: A10.cpp
-	g++ $(CFLAGS) -o A10 -I headers -I models -I shaders -I textures A10.cpp $(LDFLAGS)
+provaScene: provaScene.cpp
+	g++ $(CFLAGS) -o provaScene -I headers -I models -I shaders -I textures provaScene.cpp $(LDFLAGS)
 
 .PHONY: test clean
 
-test: A10
-	./A10
+test: provaScene
+	./provaScene
 clean:
-	rm -f A10
+	rm -f provaScene
 
