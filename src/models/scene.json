@@ -1,9 +1,9 @@
 {
 	"models": [
-		{"id": "geo",  "model": "models/LargePlane.obj",       "format":"OBJ"},
+	{"id": "geo",  "model": "models/LargePlane.obj",       "format":"OBJ"},
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "pln",  "model": "models/road_tile_1x1_005.mgcg",       "format":"MGCG"},
-		{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
+	{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"}
 	],
@@ -11,7 +11,6 @@
 		{"id": "t1", "texture": "textures/textures.png"},
 		{"id": "t2", "texture": "textures/Porto.png"},
         {"id": "t3", "texture": "textures/clouds.png"},
-        {"id": "t4", "texture": "models/road_tile_1x1_005.png"},
         {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"}
@@ -47,16 +46,6 @@
                         0, 100, 0, 0,
                         0, 0, 100, 0,
                         0, 0, 0, 1]},
-        {"id": "pln",   "model": "pln",   "texture": "t1",
-         "transform": [1, 0, 0, 0,
-                       0,1, 0, 0,
-                       0, 0,1, 0,
-                       0, 0, 0, 1]},
-        {"id": "pln2",   "model": "pln",   "texture": "t1",
-                           "transform": [1, 0, 0, 5,
-                                         0,1, 0, 0,
-                                         0, 0,1, 0,
-                                         0, 0, 0, 1]},
 		{"id": "prm",   "model": "prm",   "texture": "t1",
 		 "transform": [1, 0, 0,   0,
 					   0, 1, 0, 0,
