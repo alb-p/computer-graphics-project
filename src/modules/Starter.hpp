@@ -1615,6 +1615,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
         while (!glfwWindowShouldClose(window)){
             glfwPollEvents();
             drawFrame();
+
         }
         
         vkDeviceWaitIdle(device);
@@ -1643,7 +1644,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		imagesInFlight[imageIndex] = inFlightFences[currentFrame];
 		
 		updateUniformBuffer(imageIndex);
-		
+        
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
@@ -1780,7 +1781,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 	
 	
 	// Control Wrapper
-	void handleGamePad(int id,  glm::vec3 &m, glm::vec3 &r, bool &fire) {
+	void handleGamePad(int id,  glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start) {
 		const float deadZone = 0.1f;
 		
 		if(glfwJoystickIsGamepad(id)) {
@@ -1808,6 +1809,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 				r.z += state.buttons[GLFW_GAMEPAD_BUTTON_LEFT_BUMPER] ? 1.0f : 0.0f;
 				r.z -= state.buttons[GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER] ? 1.0f : 0.0f;
 				fire = fire | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_A] | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_B];
+                start = start | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_START];
 			}
 		}
 	}
@@ -1816,7 +1818,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 	public:
 
 	
-	void getSixAxis(float &deltaT, glm::vec3 &m, glm::vec3 &r, bool &fire) {
+	void getSixAxis(float &deltaT, glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start) {
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		static float lastTime = 0.0f;
 		
@@ -1879,10 +1881,13 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		}
 		
 		fire = glfwGetKey(window, GLFW_KEY_SPACE) | (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
-		handleGamePad(GLFW_JOYSTICK_1,m,r,fire);
-		handleGamePad(GLFW_JOYSTICK_2,m,r,fire);
-		handleGamePad(GLFW_JOYSTICK_3,m,r,fire);
-		handleGamePad(GLFW_JOYSTICK_4,m,r,fire);
+        start = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
+        
+    
+		handleGamePad(GLFW_JOYSTICK_1,m,r,fire,start);
+		handleGamePad(GLFW_JOYSTICK_2,m,r,fire,start);
+		handleGamePad(GLFW_JOYSTICK_3,m,r,fire,start);
+		handleGamePad(GLFW_JOYSTICK_4,m,r,fire,start);
 	}
 	
 	
