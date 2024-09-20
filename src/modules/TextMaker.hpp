@@ -1,7 +1,7 @@
 
 struct SingleText {
 	int usedLines;
-	const char *l[4];
+    const char *l[4];
 	int start;
 	int len;
 };
@@ -59,6 +59,10 @@ struct TextMaker {
 		createTextPipeline();
 		createTextModelAndTexture();
 	}
+    void updateText(std::vector<SingleText>* _Texts)
+        {
+            Texts = _Texts;
+        }
 
 
 	void createTextDescriptorSetAndVertexLayout() {
@@ -234,5 +238,6 @@ struct TextMaker {
 						static_cast<uint32_t>((*Texts)[curText].len), 1, static_cast<uint32_t>((*Texts)[curText].start), 0, 0);
 			
 	}
+    
 };
     
