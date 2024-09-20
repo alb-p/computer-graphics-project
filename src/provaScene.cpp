@@ -428,7 +428,7 @@ protected:
         const glm::vec3 StartingPosition = glm::vec3(-1.50, 0.0, -0.5);
         
         // Camera target height and distance
-        const float camHeight = 1.25;
+        const float camHeight = 1.0f;
         const float camDist = 3.5f;
         // Camera Pitch limits
         const float minPitch = glm::radians(-8.75f);
@@ -534,7 +534,7 @@ protected:
         // View
         // Target
         glm::vec3 target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
-        target = (WM * glm::vec4(0,0,0,1)) + (static_cast<void>(0),static_cast<void>(0),camHeight);
+        //target = (WM * glm::vec4(0,0,0,1)) + (static_cast<void>(0),static_cast<void>(0),camHeight);
         
         
         // Camera position, depending on Yaw parameter, but not character direction
