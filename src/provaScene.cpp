@@ -440,7 +440,10 @@ protected:
         glm::vec3 m = glm::vec3(0.0f), r = glm::vec3(0.0f);
         bool fire = false;
         bool start = false;
-        getSixAxis(deltaT, m, r, fire, start);
+        
+        bool hideMaze = false;
+        bool mazeVisible = true;
+        getSixAxis(deltaT, m, r, fire, start, hideMaze);
         
         // Game Logic implementation
         // Current Player Position - static variables make sure that its value remain unchanged in subsequent calls to the procedure
@@ -465,6 +468,9 @@ protected:
             gameStarted = true;
             uboText.visible = 0.0f;;
             DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+        }
+        if(hideMaze){
+            mazeVisible = false;
         }
         if(gameStarted){
             
@@ -660,6 +666,25 @@ protected:
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
+                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                }
+            }
+            else if (*SC.I[i].id == "maze"){
+                if(mazeVisible){
+                    ubo.mMat = SC.I[i].Wm * baseTr;
+                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                    
+                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                }
+                else{
+                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                    ubo.mMat = scaleMatrix;
+                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                     SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                 }
