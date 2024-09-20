@@ -113,12 +113,12 @@ protected:
     // Pipelines [Shader couples]
     Pipeline P, POverlay;
     
-    Model MText, MHUD[4];
-    DescriptorSet DSText, DSHUD[4];
-    Texture TText, THUD[4];
-    OverlayUniformBlock uboText, uboHUD[4];
-
+    Model MText[3], MHUD[4];
+    DescriptorSet DSText[3], DSHUD[4];
+    Texture TText[3], THUD[4];
+    OverlayUniformBlock uboText[3], uboHUD[4];
     Scene SC;
+    
     glm::vec3 **deltaP;
     float *deltaA;
     float *usePitch;
@@ -149,6 +149,7 @@ protected:
     
     
     bool gameStarted = false;
+    bool gameWon = false;
 
     // Here you set the main application parameters
     void setWindowParameters() {
@@ -217,25 +218,26 @@ protected:
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, true);
-     
         
-        float scaleFactorW = 2.5f;
-        float scaleFactorH = 4.0f;
-
-        float translationY = -0.35f;
-        float translationX = -0.65f;
-        std::vector<VertexOverlay> vertexData = {
-            {{anchor.x + translationX, anchor.y + translationY}, {0.0f, 0.0f}},
-            {{anchor.x + translationX, anchor.y + h * 1.15f*scaleFactorH + translationY}, {0.0f, 1.0f}},
-            {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + translationY}, {1.0f, 0.0f}},
-            {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + h * 1.15f* scaleFactorH + translationY}, {1.0f, 1.0f}}
-        };
-
-        MText.vertices = serializeVertices(vertexData);
-
-       
-        MText.indices = { 0, 1, 2,    1, 2, 3 };
-        MText.initMesh(this, &VOverlay);
+        std::vector<VertexOverlay> vertexData;
+        for (int i = 0; i<3; i++){
+            float scaleFactorW = 2.5f;
+            float scaleFactorH = 4.0f;
+            
+            float translationY = -0.35f;
+            float translationX = -0.65f;
+             vertexData = {
+                {{anchor.x + translationX, anchor.y + translationY}, {0.0f, 0.0f}},
+                {{anchor.x + translationX, anchor.y + h * 1.15f*scaleFactorH + translationY}, {0.0f, 1.0f}},
+                {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + translationY}, {1.0f, 0.0f}},
+                {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + h * 1.15f* scaleFactorH + translationY}, {1.0f, 1.0f}}
+            };
+            
+            
+            MText[i].vertices = serializeVertices(vertexData);
+            MText[i].indices = { 0, 1, 2,    1, 2, 3 };
+            MText[i].initMesh(this, &VOverlay);
+        }
         anchor = glm::vec2(-0.95, -0.95);
         h = 0.25;
         w = 0.1;
@@ -259,8 +261,9 @@ protected:
         // Load Scene
         SC.init(this, &VD, DSL, P, "models/scene.json");
         
-        
-        TText.init(this, "textures/sfondo.jpeg");
+        for(int i = 0; i < 3; i++){
+            TText[i].init(this, string_format("textures/wholeScreen%d.jpeg",i).c_str());
+        }
         for (int i = 0; i < 4; i++)
         {
             THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
@@ -288,11 +291,12 @@ protected:
         POverlay.create();
 
         SC.pipelinesAndDescriptorSetsInit(DSL);
-        
-        DSText.init(this, &DSLOverlay, {
+        for (int i = 0; i < 3; i++){
+            DSText[i].init(this, &DSLOverlay, {
                 {0, UNIFORM, sizeof(OverlayUniformBlock), nullptr},
-                {1, TEXTURE, 0, &TText}
+                {1, TEXTURE, 0, &TText[i]}
             });
+        }
         for (int i = 0; i < 4; i++)
         {
             DSHUD[i].init(this, &DSLOverlay, {
@@ -310,9 +314,10 @@ protected:
         POverlay.cleanup();
 
         SC.pipelinesAndDescriptorSetsCleanup();
-        DSText.cleanup();
-        for (int i = 0; i < 4; i++)
-        {
+        for (int i = 0; i < 3; i++){
+            DSText[i].cleanup();
+        }
+        for (int i = 0; i < 4; i++){
             DSHUD[i].cleanup();
         }
     }
@@ -331,16 +336,16 @@ protected:
         
         // Cleanup descriptor set layouts
         DSL.cleanup();
-        TText.cleanup();
+        for (int i = 0; i < 3;i++){
+            TText[i].cleanup();
+            MText[i].cleanup();
+        }
         for (int i = 0; i < 4; i++)
         {
             THUD[i].cleanup();
-        }
-        MText.cleanup();
-        for (int i = 0; i < 4; i++)
-        {
             MHUD[i].cleanup();
         }
+       
         DSLOverlay.cleanup();
 
         // Destroies the pipelines
@@ -360,11 +365,12 @@ protected:
         SC.populateCommandBuffer(commandBuffer, currentImage, P);
         
         POverlay.bind(commandBuffer);
-        MText.bind(commandBuffer);
-        DSText.bind(commandBuffer, POverlay, 0, currentImage);
-        vkCmdDrawIndexed(commandBuffer,
-            static_cast<uint32_t>(MText.indices.size()), 1, 0, 0, 0);
-        
+        for (int i = 0; i < 3; i++){
+            MText[i].bind(commandBuffer);
+            DSText[i].bind(commandBuffer, POverlay, 0, currentImage);
+            vkCmdDrawIndexed(commandBuffer,
+                             static_cast<uint32_t>(MText[i].indices.size()), 1, 0, 0, 0);
+        }
         for (int i = 0; i < 4; i++)
         {
             MHUD[i].bind(commandBuffer);
@@ -373,11 +379,11 @@ protected:
                 static_cast<uint32_t>(MHUD[i].indices.size()), 1, 0, 0, 0);
 
         }
-        
-        uboText.visible = 1.0f;;
-        DSText.map(currentImage, &uboText, sizeof(uboText), 0);
-        for (int i = 0; i < 4; i++)
-        {
+        for (int i = 0; i < 3; i++){
+            uboText[i].visible = 0.0f;
+            DSText[i].map(currentImage, &uboText[i], sizeof(uboText[i]),0);
+        }
+        for (int i = 0; i < 4; i++) {
             uboHUD[i].visible = 0.0f;
             DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
         }
@@ -438,8 +444,8 @@ protected:
         if(start){
             gameStarted = true;
             game_state = playing;
-            uboText.visible = 0.0f;;
-            DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+            uboText[0].visible = 0.0f;
+            DSText[0].map(currentImage, &uboText[0], sizeof(uboText[0]), 0);
         }
         
         
@@ -456,8 +462,12 @@ protected:
         switch (game_state) {
             case notStarted:
                 //Show homepage
-                uboText.visible = 1.0f;
-                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+                uboText[0].visible = 1.0f;
+                DSText[0].map(currentImage, &uboText[0], sizeof(uboText[0]), 0);
+                for (int i = 1; i < 3; i++){
+                    uboText[i].visible = 0.0f;
+                    DSText[i].map(currentImage, &uboText[i], sizeof(uboText[i]),0);
+                }
                 
                 //Hide HUD
                 for (int i = 0; i < 4; i++)
@@ -468,8 +478,10 @@ protected:
                 break;
             case playing:
                 //Stop showing homepage
-                uboText.visible = 0.0f;
-                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+                for (int i = 0; i < 3; i++){
+                    uboText[i].visible = 0.0f;
+                    DSText[i].map(currentImage, &uboText[i], sizeof(uboText[i]),0);
+                }
                 
                 score = 0;
                 if(object1.isCollected == false && !(count(landscape.begin(), landscape.end(), object1.name)>0)){
@@ -493,6 +505,12 @@ protected:
                 }
                 if(object3.isCollected){
                     score++;
+                }
+                
+                if(score == 3){
+                    gameWon = true;
+                    game_state = ended;
+                    break;
                 }
                 
                 ux = glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0)) * glm::vec4(1,0,0,1);
@@ -526,7 +544,7 @@ protected:
                     //PlaySoundEffect("collect.wav");
                 }
                 if(CheckCollision(Pos, trap1Position, 3)){
-                    Pos = StartingPosition;
+                    gameWon = false;
                     game_state = ended;
                 }
                 WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
@@ -704,9 +722,14 @@ protected:
                 break;
             case ended:
                 //Show homepage
-                uboText.visible = 1.0f;
-                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
-                
+                if (gameWon) {
+                    uboText[2].visible = 1.0f;
+                    DSText[2].map(currentImage, &uboText[2], sizeof(uboHUD[2]), 0);
+            
+                }else{
+                    uboText[1].visible = 1.0f;
+                    DSText[1].map(currentImage, &uboText[1], sizeof(uboHUD[1]), 0);
+                }
                 //Hide HUD
                 for (int i = 0; i < 4; i++)
                 {
@@ -717,7 +740,7 @@ protected:
                 object1.isCollected = false;
                 object2.isCollected = false;
                 object3.isCollected = false;
-                game_state = notStarted;
+                
                 break;
             default:
                 break;
