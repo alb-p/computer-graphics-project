@@ -1,6 +1,6 @@
 {
 	"models": [
-		
+        {"id": "grave",  "model": "models/grave.mgcg", "format":"MGCG"},
         {"id": "geo",  "model": "models/LargePlane.obj",       "format":"OBJ"},
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "pln",  "model": "models/road_tile_1x1_005.mgcg",       "format":"MGCG"},
@@ -18,9 +18,15 @@
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
+        {"id": "graveTexture", "texture": "textures/grave.png"},
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"}
 	],
 	"instances": [
+        {"id": "grave", "model": "grave", "texture": "graveTexture", "transform":
+            [0.5, 0, 0, -10,
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, -10,
+            0, 0, 0, 1]},
         {"id": "maze", "model": "maze", "texture": "mazeTexture", "transform":
             [1, 0, 0, 0,
             0, 0, -1, 2.43,

@@ -8,6 +8,12 @@
 #include <iostream>
 #include <format>
 
+enum GameState {
+    notStarted,
+    playing,
+    ended
+};
+
 template<typename ... Args>
 std::string string_format(const std::string& format, Args ... args)
 
@@ -96,6 +102,7 @@ void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 // MAIN !
 class CGproj : public BaseProject {
 protected:
+    GameState game_state = notStarted;
     
     // Descriptor Layouts ["classes" of what will be passed to the shaders]
     DescriptorSetLayout DSL, DSLOverlay;
@@ -125,12 +132,15 @@ protected:
     float Yaw;
     glm::vec3 InitialPos;
     int score = 0;
-    std::vector<std::string> landscape =  {"pavimento","apar", "maze"};
+    std::vector<std::string> landscape =  {"pavimento","apar", "maze", "grave"};
     
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
     glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
     glm::vec3 item3Position =  glm::vec3(0.0, 0.0, -35.0);
+    
+    glm::vec3 trap1Position =  glm::vec3(-10.0, 0.0, -10.0);
+
     std::vector<glm::vec3> itemsPositions = {item1Position, item2Position, item3Position};
     
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -145,7 +155,7 @@ protected:
         // window size, titile and initial background
         windowWidth = 1280;
         windowHeight = 720;
-        windowTitle = "A04 - World View Projection";
+        windowTitle = "PAC-MAZE";
         windowResizable = GLFW_TRUE;
         initialBackgroundColor = {0.0f, 0.85f, 1.0f, 1.0f};
         
@@ -207,18 +217,7 @@ protected:
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, true);
-        // Models, textures and Descriptors (values assigned to the uniforms)
-        /*        std::vector<Vertex> vertices = {
-         {{-100.0,0.0f,-100.0}, {0.0f,0.0f}, {0.0f,1.0f,0.0f}},
-         {{-100.0,0.0f, 100.0}, {0.0f,1.0f}, {0.0f,1.0f,0.0f}},
-         {{ 100.0,0.0f,-100.0}, {1.0f,0.0f}, {0.0f,1.0f,0.0f}},
-         {{ 100.0,0.0f, 100.0}, {1.0f,1.0f}, {0.0f,1.0f,0.0f}}};
-         M1.vertices = std::vector<unsigned char>(vertices.size()*sizeof(Vertex), 0);
-         memcpy(&vertices[0], &M1.vertices[0], vertices.size()*sizeof(Vertex));
-         M1.indices = {0, 1, 2,    1, 3, 2};
-         M1.initMesh(this, &VD); */
-        
-        
+     
         
         float scaleFactorW = 2.5f;
         float scaleFactorH = 4.0f;
@@ -266,9 +265,6 @@ protected:
         {
             THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
         }
-        // updates the text
-        //txt.init(this, &outText);
-        
         // Init local variables
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
@@ -291,9 +287,7 @@ protected:
         P.create();
         POverlay.create();
 
-        // Here you define the data set
         SC.pipelinesAndDescriptorSetsInit(DSL);
-        //txt.pipelinesAndDescriptorSetsInit();
         
         DSText.init(this, &DSLOverlay, {
                 {0, UNIFORM, sizeof(OverlayUniformBlock), nullptr},
@@ -321,7 +315,6 @@ protected:
         {
             DSHUD[i].cleanup();
         }
-        //txt.pipelinesAndDescriptorSetsCleanup();
     }
     
     // Here you destroy all the Models, Texture and Desc. Set Layouts you created!
@@ -355,7 +348,6 @@ protected:
         POverlay.destroy();
 
         SC.localCleanup();
-        //txt.localCleanup();
     }
     
     // Here it is the creation of the command buffer:
@@ -366,7 +358,6 @@ protected:
         P.bind(commandBuffer);
         
         SC.populateCommandBuffer(commandBuffer, currentImage, P);
-        //txt.populateCommandBuffer(commandBuffer, currentImage, currScene);
         
         POverlay.bind(commandBuffer);
         MText.bind(commandBuffer);
@@ -392,41 +383,23 @@ protected:
         }
     }
     
-    // Here is where you update the uniforms.
-    // Very likely this will be where you will be writing the logic of your application.
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
     
     void updateUniformBuffer(uint32_t currentImage) {
         
-        score = 0;
-      
+        
         if(glfwGetKey(window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
         
-        
-        
-        if(object1.isCollected == false && !(count(landscape.begin(), landscape.end(), object1.name)>0)){
-            landscape.push_back(object1.name);
-        }
-        if(object2.isCollected == false && !(count(landscape.begin(), landscape.end(), object2.name)>0)){
-            landscape.push_back(object2.name);
-        }
-        if(object3.isCollected == false && !(count(landscape.begin(), landscape.end(), object3.name)>0)){
-            landscape.push_back(object3.name);
-        }
-        
         glm::mat4 ViewPrj;
         glm::mat4 WM;
-        
         const float FOVy = glm::radians(45.0f);
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
-        
         // Player starting point
         const glm::vec3 StartingPosition = glm::vec3(-1.50, 0.0, -0.5);
-        
         // Camera target height and distance
         const float camHeight = 1.0f;
         const float camDist = 3.5f;
@@ -458,264 +431,297 @@ protected:
         static float Yaw = glm::radians(0.0f);
         static float Pitch = glm::radians(0.0f);
         static float Roll = glm::radians(0.0f);
-        /*
-         glm::mat4 ViewPrj = glm::mat4(1);
-         glm::mat4 World = glm::mat4(1);
-         */
-        // World
-        // Position
+        
+        UniformBufferObject ubo{};
+        GlobalUniformBufferObject gubo{};
+
         if(start){
             gameStarted = true;
+            game_state = playing;
             uboText.visible = 0.0f;;
             DSText.map(currentImage, &uboText, sizeof(uboText), 0);
         }
-        if(hideMaze){
-            mazeVisible = false;
-        }
-        if(gameStarted){
-            
-            if(object1.isCollected){
-                score++;
-            }
-            if(object2.isCollected){
-                score++;
-            }
-            if(object3.isCollected){
-                score++;
-            }
-            
-            uboText.visible = 0.0f;;
-            DSText.map(currentImage, &uboText, sizeof(uboText), 0);
-            
-            
-            glm::vec3 ux = glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0)) * glm::vec4(1,0,0,1);
-            glm::vec3 uy = glm::vec3(0,1,0);
-            glm::vec3 uz = glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0)) * glm::vec4(0,0,1,1);
-            Pos = Pos + MOVE_SPEED * m.x * ux * deltaT;
-            
-            //PER MODIFICARE VELOCITA DEL SALTO MODIFICARE QUEL 20
-            
-            //Pos +=   uy *  (float(sin(glfwGetTime()*20))/3) * deltaT;
-            Pos = Pos + MOVE_SPEED * m.y * uy * deltaT;
-            //, if the y-coordinate of the player's position is less than zero, it's set to zero.
-            Pos.y = Pos.y < 0.0f ? 0.0f : Pos.y;
-            Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
-            // Rotation
-            Yaw = Yaw - ROT_SPEED * deltaT * r.y;
-            Pitch = Pitch + ROT_SPEED * deltaT * r.x;
-            Pitch  =  Pitch < minPitch ? minPitch :
-            (Pitch > maxPitch ? maxPitch : Pitch);
-            Roll   = Roll  - ROT_SPEED * deltaT * r.z;
-            Roll   = Roll < glm::radians(-175.0f) ? glm::radians(-175.0f) :
-            (Roll > glm::radians( 175.0f) ? glm::radians( 175.0f) : Roll);
-        }
-        //        std::cout << Pos.x << ", " << Pos.y << ", " << Pos.z << "\n";
         
-        if (!object1.isCollected && CheckCollision(Pos, item1Position, 3)) {
-            std::cout << Pos.x << ", " << Pos.z << ", item 1 collected \n";
-            object1.isCollected = true;
-            //PlaySoundEffect("collect.wav");
-        }
-        if (!object2.isCollected && CheckCollision(Pos, item2Position, 3)) {
-            std::cout << Pos.x << ", " << Pos.z << ", item 2 collected \n";
-            object2.isCollected = true;
-            //PlaySoundEffect("collect.wav");
-        }
-        if (!object3.isCollected && CheckCollision(Pos, item3Position, 3)) {
-            std::cout << Pos.x << ", " << Pos.z << ", item 3 collected \n";
-            object3.isCollected = true;
-            //PlaySoundEffect("collect.wav");
-        }
         
-        if(glfwGetKey(window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose(window, GL_TRUE);
-        }
-        // Final world matrix computaiton
-        WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
-        
+        glm::mat4 baseTr = glm::mat4(1.0f);
         // Projection
         glm::mat4 Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
         Prj[1][1] *= -1;
-        
-        // View
-        // Target
-        glm::vec3 target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
-        //target = (WM * glm::vec4(0,0,0,1)) + (static_cast<void>(0),static_cast<void>(0),camHeight);
-        
-        
-        // Camera position, depending on Yaw parameter, but not character direction
-        glm::vec3 cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
-        // Final view matrix
-        //lookAt:
-        //eye – Position of the camera
-        //center – Position where the camera is looking at
-        //up – Normalized up vector, how the camera is oriented. Typically (0, 0, 1)
-        glm::mat4 View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) *
-        glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
-        
-        ViewPrj = Prj * View;
-        
+        glm::vec3 target, cameraPos;
+        glm::mat4 View;
+        glm::vec3 ux, uy, uz;
         float lambda = 10;
-        if (ViewPrjOld == glm::mat4(1))
-            ViewPrjOld = ViewPrj;
-        ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
-        ViewPrjOld = ViewPrj;
-        
-        UniformBufferObject ubo{};
-        glm::mat4 baseTr = glm::mat4(1.0f);
-        
-        // Update global uniforms
-        GlobalUniformBufferObject gubo{};
-        gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
-        gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-        gubo.eyePos = glm::vec3(100.0, 100.0, 100.0);
-        
-        // gubo.eyeDir = glm::vec4(0);
-        // gubo.eyeDir.w = 1.0;
-        
-        // Draw the subject in the scene
-        for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
-            int i = SC.InstanceIds[it->c_str()];
-            
-            //ubo.mMat = MakeWorld(Pos + dP, Yaw + deltaA[i], usePitch[i] , 0) * baseTr;
-            
-            ubo.mMat = WM * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
-            ubo.mvpMat = ViewPrj * ubo.mMat;
-            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-            
-            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-        }
-        
-        // Draw the landscape
-        for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
-            int i = SC.InstanceIds[it->c_str()];
-            
-            if (*SC.I[i].id == "objectToCollect") {
-                if (object1.isCollected) {
-                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
-                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
-                    ubo.mMat = scaleMatrix;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                    //continue;
-                } else {
-                    // Normal transformation for uncollected objects
-                    //Pos +=   uy *  (float(sin(glfwGetTime()*20))/3) * deltaT;
-                    
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
-                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
-                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
-                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
-                    
-                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                }
-            }else if(*SC.I[i].id == "objectToCollect2") {
-                if (object2.isCollected) {
-                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
-                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
-                    ubo.mMat = scaleMatrix;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                    //continue;
-                } else {
-                    // Normal transformation for uncollected objects
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
-                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-
-                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
-                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
-                    
-                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                }
-            }
-            else if (*SC.I[i].id == "objectToCollect3") {
-                if (object3.isCollected) {
-                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
-                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
-                    ubo.mMat = scaleMatrix;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                    //continue;
-                } else {
-                    // Normal transformation for uncollected objects
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(10+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
-                    glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
-                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
-                    
-                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                }
-            }
-            else if (*SC.I[i].id == "maze"){
-                if(mazeVisible){
-                    ubo.mMat = SC.I[i].Wm * baseTr;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                }
-                else{
-                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
-                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
-                    ubo.mMat = scaleMatrix;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
-                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                }
-            }
-            else{
-                ubo.mMat = SC.I[i].Wm * baseTr;
-                ubo.mvpMat = ViewPrj * ubo.mMat;
-                ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                
-                SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
-                SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-            }
-        }
-        std::string displayText = "Score: " + std::to_string(score);
-        //displayText.c_str();
         
-        //changeText(outText[0], 0, displayText.c_str());
-       
-        if(gameStarted){
-            for (int i = 0; i < 4; i++)
-            {
+        switch (game_state) {
+            case notStarted:
+                //Show homepage
+                uboText.visible = 1.0f;
+                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
                 
-                uboHUD[i].visible = 0.0f;
-                DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
-                if(i == score){
-                    uboHUD[i].visible = 1.0f;
+                //Hide HUD
+                for (int i = 0; i < 4; i++)
+                {
+                    uboHUD[i].visible = 0.0f;
                     DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
                 }
-            }}
-       // txt.updateText(&outText);
+                break;
+            case playing:
+                //Stop showing homepage
+                uboText.visible = 0.0f;
+                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+                
+                score = 0;
+                if(object1.isCollected == false && !(count(landscape.begin(), landscape.end(), object1.name)>0)){
+                    landscape.push_back(object1.name);
+                }
+                if(object2.isCollected == false && !(count(landscape.begin(), landscape.end(), object2.name)>0)){
+                    landscape.push_back(object2.name);
+                }
+                if(object3.isCollected == false && !(count(landscape.begin(), landscape.end(), object3.name)>0)){
+                    landscape.push_back(object3.name);
+                }
+                if(hideMaze){
+                    mazeVisible = false;
+                }
+                
+                if(object1.isCollected){
+                    score++;
+                }
+                if(object2.isCollected){
+                    score++;
+                }
+                if(object3.isCollected){
+                    score++;
+                }
+                
+                ux = glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0)) * glm::vec4(1,0,0,1);
+                uy = glm::vec3(0,1,0);
+                uz = glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0)) * glm::vec4(0,0,1,1);
+                Pos = Pos + MOVE_SPEED * m.x * ux * deltaT;
+                Pos = Pos + MOVE_SPEED * m.y * uy * deltaT;
+                Pos.y = Pos.y < 0.0f ? 0.0f : Pos.y;
+                Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
+                Yaw = Yaw - ROT_SPEED * deltaT * r.y;
+                Pitch = Pitch + ROT_SPEED * deltaT * r.x;
+                Pitch  =  Pitch < minPitch ? minPitch :
+                (Pitch > maxPitch ? maxPitch : Pitch);
+                Roll   = Roll  - ROT_SPEED * deltaT * r.z;
+                Roll   = Roll < glm::radians(-175.0f) ? glm::radians(-175.0f) :
+                (Roll > glm::radians( 175.0f) ? glm::radians( 175.0f) : Roll);
+        
+                if (!object1.isCollected && CheckCollision(Pos, item1Position, 3)) {
+                    //std::cout << Pos.x << ", " << Pos.z << ", item 1 collected \n";
+                    object1.isCollected = true;
+                    //PlaySoundEffect("collect.wav");
+                }
+                if (!object2.isCollected && CheckCollision(Pos, item2Position, 3)) {
+                    //std::cout << Pos.x << ", " << Pos.z << ", item 2 collected \n";
+                    object2.isCollected = true;
+                    //PlaySoundEffect("collect.wav");
+                }
+                if (!object3.isCollected && CheckCollision(Pos, item3Position, 3)) {
+                    //std::cout << Pos.x << ", " << Pos.z << ", item 3 collected \n";
+                    object3.isCollected = true;
+                    //PlaySoundEffect("collect.wav");
+                }
+                if(CheckCollision(Pos, trap1Position, 3)){
+                    Pos = StartingPosition;
+                    game_state = ended;
+                }
+                WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
+                
+                // Projection
+                Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
+                Prj[1][1] *= -1;
+                
+                // View
+                // Target
+                target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
+                //target = (WM * glm::vec4(0,0,0,1)) + (static_cast<void>(0),static_cast<void>(0),camHeight);
+                
+                
+                // Camera position, depending on Yaw parameter, but not character direction
+                cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
+                // Final view matrix
+                //lookAt:
+                //eye – Position of the camera
+                //center – Position where the camera is looking at
+                //up – Normalized up vector, how the camera is oriented. Typically (0, 0, 1)
+                View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
+                
+                ViewPrj = Prj * View;
+                
+                if (ViewPrjOld == glm::mat4(1))
+                    ViewPrjOld = ViewPrj;
+                ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
+                ViewPrjOld = ViewPrj;
+                
+                
+                // Update global uniforms
+                gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
+                gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+                gubo.eyePos = glm::vec3(100.0, 100.0, 100.0);
+                
+                // gubo.eyeDir = glm::vec4(0);
+                // gubo.eyeDir.w = 1.0;
+                
+                // Draw the subject in the scene
+                for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
+                    int i = SC.InstanceIds[it->c_str()];
+                                        
+                    ubo.mMat = WM * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
+                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                    ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                    
+                    SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                    SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                }
+                
+                // Draw the landscape
+                for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
+                    int i = SC.InstanceIds[it->c_str()];
+                    
+                    if (*SC.I[i].id == "objectToCollect") {
+                        if (object1.isCollected) {
+                            glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                            glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                            ubo.mMat = scaleMatrix;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                            //continue;
+                        } else {
+                            // Normal transformation for uncollected objects
+                            //Pos +=   uy *  (float(sin(glfwGetTime()*20))/3) * deltaT;
+                            
+                            glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
+                            glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
+                            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
+                            float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                            glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                            
+                            ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        }
+                    }
+                    else if(*SC.I[i].id == "objectToCollect2") {
+                        if (object2.isCollected) {
+                        glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                        ubo.mMat = scaleMatrix;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        //continue;
+                        }
+                        else {
+                            // Normal transformation for uncollected objects
+                            glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
+                            glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
+                            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+                            float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                            glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                            
+                            ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        }
+                    }
+                    else if (*SC.I[i].id == "objectToCollect3") {
+                        if (object3.isCollected) {
+                            glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                            glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                            ubo.mMat = scaleMatrix;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                            //continue;
+                        }
+                        else {
+                            // Normal transformation for uncollected objects
+                            glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(10+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
+                            glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
+                            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                            float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                            glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                            
+                            ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        }
+                    }
+                    else if (*SC.I[i].id == "maze"){
+                        if(mazeVisible){
+                            ubo.mMat = SC.I[i].Wm * baseTr;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        }
+                        else{
+                            glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                            glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                            ubo.mMat = scaleMatrix;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                            SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                            SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                        }
+                    }
+                    else{ //praticamente dentro questo else fa solo sky e pavimento
+                        ubo.mMat = SC.I[i].Wm * baseTr;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                    }
+                }
+                for (int i = 0; i < 4; i++)
+                {
+                    uboHUD[i].visible = 0.0f;
+                    DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+                    if(i == score){
+                        uboHUD[i].visible = 1.0f;
+                        DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+                    }
+                }
+                break;
+            case ended:
+                //Show homepage
+                uboText.visible = 1.0f;
+                DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+                
+                //Hide HUD
+                for (int i = 0; i < 4; i++)
+                {
+                    uboHUD[i].visible = 0.0f;
+                    DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+                }
+                Pos = StartingPosition;
+                object1.isCollected = false;
+                object2.isCollected = false;
+                object3.isCollected = false;
+                game_state = notStarted;
+                break;
+            default:
+                break;
+        }
     }
 
 };
