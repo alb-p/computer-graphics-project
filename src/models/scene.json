@@ -7,7 +7,8 @@
 		{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
-        {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"}
+        {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"},
+        {"id": "maze", "model": "models/scene.gltf", "format": "GLTF"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
@@ -16,9 +17,15 @@
         {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"},
-        {"id": "keysTexture", "texture": "textures/Key_Albedo.png"}
+        {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
+        {"id": "mazeTexture", "texture": "textures/walls.jpeg"}
 	],
 	"instances": [
+        {"id": "maze", "model": "maze", "texture": "mazeTexture", "transform":
+            [1, 0, 0, 0,
+            0, 0, -1, 2.43,
+            0, 1,0,0,
+            0, 0, 0, 1]},
         {"id": "objectToCollect", "model": "key", "texture": "keysTexture", "transform":
             [0.01, 0, 0, -15,
             0,0.01, 0, 0.5,

@@ -125,7 +125,7 @@ protected:
     float Yaw;
     glm::vec3 InitialPos;
     int score = 0;
-    std::vector<std::string> landscape =  {"pavimento","apar", "apar3"};
+    std::vector<std::string> landscape =  {"pavimento","apar", "maze"};
     
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
