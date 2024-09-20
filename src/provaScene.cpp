@@ -143,8 +143,8 @@ protected:
     // Here you set the main application parameters
     void setWindowParameters() {
         // window size, titile and initial background
-        windowWidth = 800;
-        windowHeight = 600;
+        windowWidth = 1280;
+        windowHeight = 720;
         windowTitle = "A04 - World View Projection";
         windowResizable = GLFW_TRUE;
         initialBackgroundColor = {0.0f, 0.85f, 1.0f, 1.0f};
@@ -218,11 +218,18 @@ protected:
          M1.indices = {0, 1, 2,    1, 3, 2};
          M1.initMesh(this, &VD); */
         
+        
+        
+        float scaleFactorW = 2.5f;
+        float scaleFactorH = 4.0f;
+
+        float translationY = -0.35f;
+        float translationX = -0.65f;
         std::vector<VertexOverlay> vertexData = {
-            {{anchor.x, anchor.y}, {0.0f, 0.0f}},
-            {{anchor.x, anchor.y + h}, {0.0f, 1.0f}},
-            {{anchor.x + w, anchor.y}, {1.0f, 0.0f}},
-            {{anchor.x + w, anchor.y + h}, {1.0f, 1.0f}}
+            {{anchor.x + translationX, anchor.y + translationY}, {0.0f, 0.0f}},
+            {{anchor.x + translationX, anchor.y + h * 1.15f*scaleFactorH + translationY}, {0.0f, 1.0f}},
+            {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + translationY}, {1.0f, 0.0f}},
+            {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + h * 1.15f* scaleFactorH + translationY}, {1.0f, 1.0f}}
         };
 
         MText.vertices = serializeVertices(vertexData);
@@ -236,7 +243,7 @@ protected:
         for (int i = 0; i < 4; i++)
         {
             
-            float scaleFactor = 2.5f; // Example scaling factor (1.5x bigger)
+            float scaleFactor = 2.5f;
             float translationY = -0.25f;
             vertexData = {
                 {{anchor.x, anchor.y + translationY}, {0.0f, 0.0f}},
@@ -254,7 +261,7 @@ protected:
         SC.init(this, &VD, DSL, P, "models/scene.json");
         
         
-        TText.init(this, "textures/provaT.png");
+        TText.init(this, "textures/sfondo.jpeg");
         for (int i = 0; i < 4; i++)
         {
             THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
@@ -422,7 +429,7 @@ protected:
         
         // Camera target height and distance
         const float camHeight = 1.25;
-        const float camDist = 5;
+        const float camDist = 3.5f;
         // Camera Pitch limits
         const float minPitch = glm::radians(-8.75f);
         const float maxPitch = glm::radians(60.0f);
