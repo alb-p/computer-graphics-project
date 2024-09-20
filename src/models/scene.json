@@ -5,12 +5,14 @@
         {"id": "pln",  "model": "models/road_tile_1x1_005.mgcg",       "format":"MGCG"},
 	{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
+        {"id": "maze",  "model": "models/maze.gltf", "format": "GLTF"},
         {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
 		{"id": "t2", "texture": "textures/Porto.png"},
         {"id": "t3", "texture": "textures/clouds.png"},
+        {"id": "t4", "texture": "textures/Material_diffuse.jpeg"},
         {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"}
@@ -46,10 +48,11 @@
                         0, 100, 0, 0,
                         0, 0, 100, 0,
                         0, 0, 0, 1]},
-		{"id": "prm",   "model": "prm",   "texture": "t1",
-		 "transform": [1, 0, 0,   0,
-					   0, 1, 0, 0,
-					   0, 0, 1, 0,
-					   0, 0, 0, 1]}
+        {"id": "prm", "model": "maze", "texture": "t4",
+        "transform": [1, 0, 0, 0,
+                        0, 0, -1, 2.43,
+                        0, 1, 0, 0,
+                        0, 0, 0, 1]}
 	]
+        
 }
