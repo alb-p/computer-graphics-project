@@ -6,7 +6,7 @@
         {"id": "pln",  "model": "models/road_tile_1x1_005.mgcg",       "format":"MGCG"},
 		{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
-        {"id": "tfw",  "model": "models/TruckFrontWheel.mgcg", "format":"MGCG"},
+        {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
         {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"}
 	],
 	"textures": [
@@ -15,23 +15,24 @@
         {"id": "t4", "texture": "models/road_tile_1x1_005.png"},
         {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
-        {"id": "t7", "texture": "textures/Colors2.png"}
+        {"id": "t7", "texture": "textures/Colors2.png"},
+        {"id": "keysTexture", "texture": "textures/Key_Albedo.png"}
 	],
 	"instances": [
-        {"id": "objectToCollect", "model": "tfw", "texture": "t1", "transform":
-            [1, 0, 0, -15,
-            0,1, 0, 0,
-            0, 0,1, -15,
+        {"id": "objectToCollect", "model": "key", "texture": "keysTexture", "transform":
+            [0.01, 0, 0, -15,
+            0,0.01, 0, 0.5,
+            0, 0,0.01, -15,
             0, 0, 0, 1]},
-        {"id": "objectToCollect2", "model": "tfw", "texture": "t1", "transform":
-            [1, 0, 0, -8,
-            0,1, 0, 0,
-            0, 0,1, -20,
+        {"id": "objectToCollect2", "model": "key", "texture": "keysTexture", "transform":
+            [0.01, 0, 0, -8,
+            0,0.01, 0, 0.5,
+            0, 0,0.01, -20,
             0, 0, 0, 1]},
-        {"id": "objectToCollect3", "model": "tfw", "texture": "t1", "transform":
-            [1, 0, 0, 0,
-            0,1, 0, 0,
-            0, 0,1, -35,
+        {"id": "objectToCollect3", "model": "key", "texture": "keysTexture", "transform":
+            [0.01, 0, 0, 0,
+            0,0.01, 0, 0.5,
+            0, 0,0.01, -35,
             0, 0, 0, 1]},
         {"id": "c1", "model": "character", "texture": "t7",  "transform":
             [10, 0, 0, 0,

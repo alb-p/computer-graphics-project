@@ -89,12 +89,12 @@ std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& v
  
 // #include "WVP.hpp"
 
-class A04; 
-void GameLogic(A04 *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
+class CGproj; 
+void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 
  
 // MAIN !
-class A04 : public BaseProject {
+class CGproj : public BaseProject {
 protected:
     
     // Descriptor Layouts ["classes" of what will be passed to the shaders]
@@ -236,8 +236,15 @@ protected:
         for (int i = 0; i < 4; i++)
         {
             
-            vertexData = { {{anchor.x, anchor.y}, {0.0f,0.0f}}, {{anchor.x, anchor.y + h}, {0.0f,1.0f}},
-                             {{anchor.x + w, anchor.y}, {1.0f,0.0f}}, {{ anchor.x + w, anchor.y + h}, {1.0f,1.0f}} };
+            float scaleFactor = 2.5f; // Example scaling factor (1.5x bigger)
+            float translationY = -0.25f;
+            vertexData = {
+                {{anchor.x, anchor.y + translationY}, {0.0f, 0.0f}},
+                {{anchor.x, anchor.y + h * scaleFactor + translationY}, {0.0f, 1.0f}},
+                {{anchor.x + w * 2*scaleFactor, anchor.y + translationY}, {1.0f, 0.0f}},
+                {{anchor.x + w * 2*scaleFactor, anchor.y + h * scaleFactor + translationY}, {1.0f, 1.0f}}
+            };
+
             MHUD[i].vertices = serializeVertices(vertexData);
             MHUD[i].indices = { 0, 1, 2,    1, 2, 3 };
             MHUD[i].initMesh(this, &VOverlay);
@@ -250,7 +257,7 @@ protected:
         TText.init(this, "textures/provaT.png");
         for (int i = 0; i < 4; i++)
         {
-            THUD[i].init(this, string_format("textures/life%d.png", i ).c_str());
+            THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
         }
         // updates the text
         //txt.init(this, &outText);
@@ -368,6 +375,14 @@ protected:
                 static_cast<uint32_t>(MHUD[i].indices.size()), 1, 0, 0, 0);
 
         }
+        
+        uboText.visible = 1.0f;;
+        DSText.map(currentImage, &uboText, sizeof(uboText), 0);
+        for (int i = 0; i < 4; i++)
+        {
+            uboHUD[i].visible = 0.0f;
+            DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+        }
     }
     
     // Here is where you update the uniforms.
@@ -376,14 +391,9 @@ protected:
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
     
     void updateUniformBuffer(uint32_t currentImage) {
-        /*
-        score = 0;
         
-        for(auto &o : collectibleItems){
-            if(o.isCollected){
-                score++;
-            }
-        }*/
+        score = 0;
+      
         if(glfwGetKey(window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window, GL_TRUE);
         }
@@ -444,14 +454,23 @@ protected:
          */
         // World
         // Position
-        uboText.visible = 1.0f;;
-        DSText.map(currentImage, &uboText, sizeof(uboText), 0);
         if(start){
             gameStarted = true;
             uboText.visible = 0.0f;;
             DSText.map(currentImage, &uboText, sizeof(uboText), 0);
         }
         if(gameStarted){
+            
+            if(object1.isCollected){
+                score++;
+            }
+            if(object2.isCollected){
+                score++;
+            }
+            if(object3.isCollected){
+                score++;
+            }
+            
             uboText.visible = 0.0f;;
             DSText.map(currentImage, &uboText, sizeof(uboText), 0);
             
@@ -573,10 +592,14 @@ protected:
                     // Normal transformation for uncollected objects
                     //Pos +=   uy *  (float(sin(glfwGetTime()*20))/3) * deltaT;
                     
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*10))) * deltaT),1.0f);
+                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
                     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    ubo.mMat = SC.I[i].Wm * translationMatrix *baseTr;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                    
+                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
                     SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
@@ -594,10 +617,14 @@ protected:
                     //continue;
                 } else {
                     // Normal transformation for uncollected objects
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*10))) * deltaT),1.0f);
+                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
                     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    ubo.mMat = SC.I[i].Wm * translationMatrix *baseTr;
-                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                    
+                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
                     SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
@@ -616,9 +643,13 @@ protected:
                     //continue;
                 } else {
                     // Normal transformation for uncollected objects
-                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(10+float(sin(glfwGetTime()*10))) * deltaT),1.0f);
+                    glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(10+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
                     glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
-                    ubo.mMat = SC.I[i].Wm * translationMatrix *baseTr;
+                    glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                    float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                    glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                    
+                    ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
@@ -640,14 +671,17 @@ protected:
         
         //changeText(outText[0], 0, displayText.c_str());
        
-
-        for (int i = 0; i < 4; i++)
-        {
-            uboHUD[i].visible = 0.0f;
-            DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
-        }
-        uboHUD[2].visible = 1.0f;
-        DSHUD[2].map(currentImage, &uboHUD[2], sizeof(uboHUD[2]), 0);
+        if(gameStarted){
+            for (int i = 0; i < 4; i++)
+            {
+                
+                uboHUD[i].visible = 0.0f;
+                DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+                if(i == score){
+                    uboHUD[i].visible = 1.0f;
+                    DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
+                }
+            }}
        // txt.updateText(&outText);
 
     }
@@ -657,7 +691,7 @@ protected:
 
 // This is the main: probably you do not need to touch this!
 int main() {
-    A04 app;
+    CGproj app;
  
     try {
         app.run();
