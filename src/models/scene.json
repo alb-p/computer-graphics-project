@@ -8,7 +8,8 @@
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
         {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"},
-        {"id": "maze", "model": "models/scene.gltf", "format": "GLTF"}
+        {"id": "maze", "model": "models/scene.gltf", "format": "GLTF"},
+        {"id": "bound", "model": "models/Maze_PROVA.gltf", "format":"GLTF"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
@@ -22,6 +23,13 @@
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"}
 	],
 	"instances": [
+        {"id": "provaBound", "model": "bound", "texture": "t1", "transform":
+            [100,0,0,0,
+            0,100,0,0,
+            0,0,100,0,
+            0,0,0,1
+            ]
+        },
         {"id": "grave", "model": "grave", "texture": "graveTexture", "transform":
             [0.5, 0, 0, -10,
             0, 0.5, 0, 0.4,
