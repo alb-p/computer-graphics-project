@@ -3,18 +3,14 @@
         {"id": "grave",  "model": "models/grave.mgcg", "format":"MGCG"},
         {"id": "geo",  "model": "models/LargePlane.obj",       "format":"OBJ"},
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
-        {"id": "pln",  "model": "models/road_tile_1x1_005.mgcg",       "format":"MGCG"},
-		{"id": "prm",  "model": "models/untitled.gltf",      "format":"GLTF"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
         {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"},
         {"id": "maze", "model": "models/scene.gltf", "format": "GLTF"},
-        {"id": "bound", "model": "models/Maze_PROVA.gltf", "format":"GLTF"}
+        {"id": "mazeX", "model": "models/mazegenerated.gltf", "format":"GLTF"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
-        {"id": "t3", "texture": "textures/clouds.png"},
-        {"id": "t4", "texture": "models/road_tile_1x1_005.png"},
         {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"},
@@ -23,10 +19,10 @@
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"}
 	],
 	"instances": [
-        {"id": "provaBound", "model": "bound", "texture": "t1", "transform":
-            [100,0,0,0,
-            0,100,0,0,
-            0,0,100,0,
+        {"id": "maze", "model": "mazeX", "texture": "t1", "transform":
+            [1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
             0,0,0,1
             ]
         },
@@ -35,11 +31,7 @@
             0, 0.5, 0, 0.4,
             0, 0,0.5, -10,
             0, 0, 0, 1]},
-        {"id": "maze", "model": "maze", "texture": "mazeTexture", "transform":
-            [1, 0, 0, 0,
-            0, 0, -1, 2.43,
-            0, 1,0,0,
-            0, 0, 0, 1]},
+     
         {"id": "objectToCollect", "model": "key", "texture": "keysTexture", "transform":
             [0.01, 0, 0, -15,
             0,0.01, 0, 0.5,

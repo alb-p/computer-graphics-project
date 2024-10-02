@@ -2963,6 +2963,7 @@ void Texture::initCubic(BaseProject *bp, std::string files[6]) {
 
 void Texture::cleanup() {
    	vkDestroySampler(BP->device, textureSampler, nullptr);
+    
    	vkDestroyImageView(BP->device, textureImageView, nullptr);
 	vkDestroyImage(BP->device, textureImage, nullptr);
 	vkFreeMemory(BP->device, textureImageMemory, nullptr);

@@ -8,46 +8,26 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0,
-				1
+				0
 			]
 		}
 	],
 	"nodes":[
 		{
-			"name":"Empty.001",
-			"translation":[
-				8.408007621765137,
-				0.6396215558052063,
-				-4.92189884185791
-			]
-		},
-		{
 			"mesh":0,
-			"name":"externalWalls",
-			"scale":[
-				0.4921259880065918,
-				1.2999999523162842,
-				0.4921259880065918
-			],
-			"translation":[
-				4.130350112915039,
-				0,
-				-11.220288276672363
-			]
+			"name":"Maze"
 		}
 	],
 	"meshes":[
 		{
-			"name":"Plane.001",
+			"name":"Maze.005",
 			"primitives":[
 				{
 					"attributes":{
 						"POSITION":0,
-						"NORMAL":1,
-						"TEXCOORD_0":2
+						"NORMAL":1
 					},
-					"indices":3
+					"indices":2
 				}
 			]
 		}
@@ -56,67 +36,55 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":1647,
+			"count":49940,
 			"max":[
-				2.825488567352295,
-				2.3109750747680664,
-				37.8475456237793
+				47.84328842163086,
+				20.00030517578125,
+				48.55936813354492
 			],
 			"min":[
-				-48.68300247192383,
-				-0.05709077790379524,
-				-0.34101253747940063
+				-47.30670928955078,
+				0.00030517578125,
+				-46.59062957763672
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":1647,
+			"count":49940,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
-			"componentType":5126,
-			"count":1647,
-			"type":"VEC2"
-		},
-		{
-			"bufferView":3,
 			"componentType":5123,
-			"count":2940,
+			"count":79176,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":19764,
+			"byteLength":599280,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":19764,
-			"byteOffset":19764,
+			"byteLength":599280,
+			"byteOffset":599280,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":13176,
-			"byteOffset":39528,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":5880,
-			"byteOffset":52704,
+			"byteLength":158352,
+			"byteOffset":1198560,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":58584,
+			"byteLength":1356912,
 			"uri":"untitled.bin"
 		}
 	]

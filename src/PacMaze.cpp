@@ -3,99 +3,25 @@
 #include <string>
 #include <iostream>
 #include <format>
+#include "modules/edges_output.cpp"
 
+bool doSegmentsIntersect(glm::vec3 P1, glm::vec3 P2, glm::vec3 Q1, glm::vec3 Q2) {
+    glm::vec3 r = P2 - P1;
+    glm::vec3 s = Q2 - Q1;
 
-std::vector<std::pair<glm::vec3, glm::vec3>> vertex_pairs = {
-    { { -1.178035, 0.0000, 4.948555 }, { 2.15321, 0.0000, 4.948555 } },
-    { { -1.178035, 0.0000, 4.948555 }, { -1.178035, 0.0000, 3.696451 } },
-    { { -1.297759, 0.0000, 4.948555 }, { -4.948555, 0.0000, 4.948555 } },
-    { { -4.948555, 0.0000, 4.948555 }, { -4.948555, 0.0000, -4.948555 } },
-    { { -4.948555, 0.0000, -4.948555 }, { -3.8135, 0.0000, -4.948555 } },
-    { { -3.8135, 0.0000, -4.948555 }, { -3.8135, 0.0000, -3.756313 } },
-    { { -3.8135, 0.0000, -3.756313 }, { -3.693777, 0.0000, -3.756313 } },
-    { { -3.693777, 0.0000, -3.756313 }, { -3.693777, 0.0000, -4.948555 } },
-    { { -3.693777, 0.0000, -4.948555 }, { -3.086641, 0.0000, -4.948555 } },
-    { { -1.178035, 0.0000, 3.696451 }, { -2.457027, 0.0000, 3.696451 } },
-    { { -3.086641, 0.0000, -4.948555 }, { 2.15321, 0.0000, 4.948555 } },
-    { { -3.086641, 0.0000, -4.948555 }, { -1.730548, 0.0000, -4.948555 } },
-    { { 2.15321, 0.0000, 4.948555 }, { 3.684389, 0.0000, 4.948555 } },
-    { { -1.730548, 0.0000, -4.948555 }, { -2.457027, 0.0000, 3.696451 } },
-    { { -2.457027, 0.0000, 1.311966 }, { 3.684389, 0.0000, 4.948555 } },
-    { { -1.730548, 0.0000, -4.948555 }, { -1.312864, 0.0000, -4.948555 } },
-    { { 3.684389, 0.0000, 4.948555 }, { 4.948555, 0.0000, 4.948555 } },
-    { { 4.948555, 0.0000, 4.948555 }, { 4.948555, 0.0000, -4.948555 } },
-    { { 4.948555, 0.0000, -4.948555 }, { 3.810467, 0.0000, -4.948555 } },
-    { { -1.312864, 0.0000, -4.948555 }, { -1.312864, 0.0000, -3.696451 } },
-    { { -1.312864, 0.0000, -3.696451 }, { 0.0, 0.0000, -3.696451 } },
-    { { 0.0, 0.0000, -3.696451 }, { 0.0, 0.0000, -3.816174 } },
-    { { 0.0, 0.0000, -3.816174 }, { -1.193141, 0.0000, -3.816174 } },
-    { { -1.193141, 0.0000, -3.816174 }, { -1.193141, 0.0000, -4.948555 } },
-    { { -2.457027, 0.0000, 1.311966 }, { -1.20204, 0.0000, 1.311966 } },
-    { { -1.193141, 0.0000, -4.948555 }, { 3.690744, 0.0000, -4.948555 } },
-    { { 3.810467, 0.0000, -3.756313 }, { 3.690744, 0.0000, -3.756313 } },
-    { { 3.810467, 0.0000, -4.948555 }, { 3.810467, 0.0000, -3.756313 } },
-    { { 3.690744, 0.0000, -4.948555 }, { 3.690744, 0.0000, -3.756313 } },
-    { { -1.178035, 0.0000, 4.948555 }, { 2.15321, 0.0000, 4.948555 } },
-    { { -1.178035, 0.0000, 3.696451 }, { -2.457027, 0.0000, 3.696451 } },
-    { { -2.457027, 0.0000, 1.311966 }, { -1.20204, 0.0000, 1.311966 } },
-    { { -1.20204, 0.0000, 1.192243 }, { -2.576751, 0.0000, 1.192243 } },
-    { { -2.576751, 0.0000, 3.816174 }, { -1.297759, 0.0000, 3.816174 } },
-    { { -1.297759, 0.0000, 4.948555 }, { -4.948555, 0.0000, 4.948555 } },
-    { { -4.948555, 0.0000, -4.948555 }, { -3.8135, 0.0000, -4.948555 } },
-    { { -3.8135, 0.0000, -3.756313 }, { -3.693777, 0.0000, -3.756313 } },
-    { { -3.693777, 0.0000, -4.948555 }, { -3.086641, 0.0000, -4.948555 } },
-    { { -1.730548, 0.0000, -4.948555 }, { 3.684389, 0.0000, 4.948555 } },
-    { { -1.312864, 0.0000, -4.948555 }, { 4.948555, 0.0000, 4.948555 } },
-    { { 4.948555, 0.0000, -4.948555 }, { 3.810467, 0.0000, -4.948555 } },
-    { { -1.312864, 0.0000, -3.696451 }, { 0.0, 0.0000, -3.696451 } },
-    { { 0.0, 0.0000, -3.816174 }, { -1.193141, 0.0000, -3.816174 } },
-    { { -1.193141, 0.0000, -4.948555 }, { 3.690744, 0.0000, -4.948555 } },
-    { { 3.810467, 0.0000, -3.756313 }, { 3.690744, 0.0000, -3.756313 } },
-    { { 2.513058, 0.0000, -2.444347 }, { 1.308663, 0.0000, -1.311966 } },
-    { { 2.513058, 0.0000, -0.059862 }, { 1.308663, 0.0000, 0.059862 } },
-    { { 2.513058, 0.0000, 0.059862 }, { -1.250258, 0.0000, -0.059862 } },
-    { { 0.0, 0.0000, -1.192243 }, { 0.0, 0.0000, -1.311966 } },
-    { { 3.717452, 0.0000, 1.192243 }, { 3.717452, 0.0000, 0.059862 } },
-    { { 0.0, 0.0000, -0.059862 }, { 0.0, 0.0000, 0.059862 } },
-    { { 0.0, 0.0000, -2.444347 }, { -1.250258, 0.0000, 0.059862 } },
-    { { 1.27551, 0.0000, 1.311966 }, { 1.27551, 0.0000, 1.192243 } },
-    { { -3.824565, 0.0000, -2.504208 }, { -3.824565, 0.0000, 0.059862 } },
-    { { -3.704842, 0.0000, -2.504208 }, { 0.0, 0.0000, -2.56407 } },
-    { { -3.704842, 0.0000, -0.059862 }, { 2.513058, 0.0000, -2.56407 } },
-    { { 1.18894, 0.0000, -1.192243 }, { 3.837176, 0.0000, -0.059862 } },
-    { { 3.837176, 0.0000, 1.311966 }, { 1.18894, 0.0000, -0.059862 } },
-    { { -1.250258, 0.0000, -0.059862 }, { -1.250258, 0.0000, 0.059862 } },
-    { { -3.824565, 0.0000, -2.504208 }, { -3.704842, 0.0000, -2.504208 } },
-    { { -3.824565, 0.0000, -2.504208 }, { -3.824565, 0.0000, 0.059862 } },
-    { { -1.20204, 0.0000, 1.311966 }, { -1.20204, 0.0000, 1.192243 } },
-    { { -1.250258, 0.0000, 0.059862 }, { -3.824565, 0.0000, 0.059862 } },
-    { { -3.704842, 0.0000, -2.504208 }, { -3.704842, 0.0000, -0.059862 } },
-    { { -1.250258, 0.0000, -0.059862 }, { -3.704842, 0.0000, -0.059862 } },
-    { { 0.0, 0.0000, -2.444347 }, { 0.0, 0.0000, -2.56407 } },
-    { { 2.513058, 0.0000, -2.444347 }, { 2.513058, 0.0000, -2.56407 } },
-    { { 2.513058, 0.0000, -2.444347 }, { 0.0, 0.0000, -2.444347 } },
-    { { 0.0, 0.0000, -2.56407 }, { 2.513058, 0.0000, -2.56407 } },
-    { { 1.27551, 0.0000, 1.311966 }, { 1.27551, 0.0000, 1.192243 } },
-    { { -1.20204, 0.0000, 1.192243 }, { -2.576751, 0.0000, 1.192243 } },
-    { { 2.513058, 0.0000, -0.059862 }, { 2.513058, 0.0000, 0.059862 } },
-    { { 2.513058, 0.0000, 0.059862 }, { 3.717452, 0.0000, 0.059862 } },
-    { { 3.717452, 0.0000, 1.192243 }, { 3.717452, 0.0000, 0.059862 } },
-    { { 3.717452, 0.0000, 1.192243 }, { 1.27551, 0.0000, 1.192243 } },
-    { { 2.513058, 0.0000, -0.059862 }, { 3.837176, 0.0000, -0.059862 } },
-    { { 3.837176, 0.0000, -0.059862 }, { 3.837176, 0.0000, 1.311966 } },
-    { { 1.27551, 0.0000, 1.311966 }, { 3.837176, 0.0000, 1.311966 } },
-    { { 0.0, 0.0000, -1.192243 }, { 0.0, 0.0000, -1.311966 } },
-    { { 0.0, 0.0000, -0.059862 }, { 0.0, 0.0000, 0.059862 } },
-    { { -2.576751, 0.0000, 1.192243 }, { -2.576751, 0.0000, 3.816174 } },
-    { { 1.18894, 0.0000, -1.192243 }, { 1.18894, 0.0000, -0.059862 } },
-    { { 0.0, 0.0000, -0.059862 }, { 1.18894, 0.0000, -0.059862 } },
-    { { 0.0, 0.0000, -1.192243 }, { 1.18894, 0.0000, -1.192243 } },
-    { { 1.308663, 0.0000, -1.311966 }, { 1.308663, 0.0000, 0.059862 } },
-    { { 1.308663, 0.0000, 0.059862 }, { 0.0, 0.0000, 0.059862 } },
-    { { 1.308663, 0.0000, -1.311966 }, { 0.0, 0.0000, -1.311966 } },
-    { { -2.576751, 0.0000, 3.816174 }, { -1.297759, 0.0000, 3.816174 } },
-};
+    float rxs = r.x * s.z - r.z * s.x;
+    glm::vec3 PQ = Q1 - P1;
+    float PQxr = PQ.x * r.z - PQ.z * r.x;
+    float PQxs = PQ.x * s.z - PQ.z * s.x;
 
+    // Parallel or collinear
+    if (rxs == 0) return false;
+
+    float t = PQxs / rxs;
+    float u = PQxr / rxs;
+
+    return (0 <= t && t <= 1 && 0 <= u && u <= 1);
+}
 
 enum GameState {
     notStarted,
@@ -127,6 +53,7 @@ bool CheckCollision(const glm::vec3& playerPos, glm::vec3 itemPos, float radius)
     float distance = glm::length(playerPos - itemPos);
     return (distance < radius); // Collision if within radius
 }
+
 struct UniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
     alignas(16) glm::mat4 mMat;
@@ -159,70 +86,7 @@ std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& v
 // Epsilon for floating-point comparisons
 const float EPSILON = 1e-6f;
 
-// Function to clamp a value between 0 and 1 (valid parametric range for a segment)
-float clamp(float value) {
-    return std::max(0.0f, std::min(1.0f, value));
-}
 
-// Function to check if two 3D segments intersect
-bool segmentsIntersect(const glm::vec3& P1, const glm::vec3& P2,
-                        glm::vec3& P3,  glm::vec3& P4) {
-    glm::vec3 D1 = (P2 - P1);  // Direction vector of segment X
-    D1.operator*=(1); //scale factor to simulate thickness
-    glm::vec3 D2 = P4 - P3;  // Direction vector of segment Y
-    glm::vec3 R = P1 - P3;   // Vector between P1 and P3
-
-    float a = glm::dot(D1, D1);  // Squared length of D1
-    float e = glm::dot(D2, D2);  // Squared length of D2
-    float f = glm::dot(D2, R);
-
-    // Check if both segments are degenerate points
-    if (a <= EPSILON && e <= EPSILON) {
-        return false;  // Both segments are points and can't intersect
-    }
-    
-    // Check if segment X is a degenerate point
-    if (a <= EPSILON) {
-        // Segment X is a point, check if it lies on segment Y
-        float s = clamp(f / e);
-        glm::vec3 closestPoint = P3 + s * D2;
-        return glm::distance(P1, closestPoint) < EPSILON;
-    }
-    
-    // Check if segment Y is a degenerate point
-    if (e <= EPSILON) {
-        // Segment Y is a point, check if it lies on segment X
-        float t = clamp(glm::dot(D1, R) / a);
-        glm::vec3 closestPoint = P1 + t * D1;
-        return glm::distance(P3, closestPoint) < EPSILON;
-    }
-
-    // General case for two segments
-    float b = glm::dot(D1, D2);
-    float c = glm::dot(D1, R);
-
-    float denom = a * e - b * b;
-
-    // If denominator is zero, the lines are parallel
-    if (denom != 0.0f) {
-        // Compute parameter t for segment X
-        float t = clamp((b * f - c * e) / denom);
-
-        // Compute parameter u for segment Y
-        float u = clamp((b * t + f) / e);
-
-        // Get the closest points on both segments
-        glm::vec3 closestPointX = P1 + t * D1;
-        glm::vec3 closestPointY = P3 + u * D2;
-
-        // Check if the closest points are the same (intersection)
-        if (glm::distance(closestPointX, closestPointY) < 5*EPSILON) {
-            return true;
-        }
-    }
-
-    return false;
-}
 
 class CGproj;
 void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
@@ -467,13 +331,13 @@ protected:
         const float FOVy = glm::radians(45.0f);
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
-        const glm::vec3 StartingPosition = glm::vec3(-20.50, 2.0, -10.5);
+        const glm::vec3 StartingPosition = glm::vec3(-45.0, 0.0, 130.0);
         const float camHeight = 1.0f;
         const float camDist = 3.5f;
         const float minPitch = glm::radians(-8.75f);
         const float maxPitch = glm::radians(60.0f);
         const float ROT_SPEED = glm::radians(120.0f);
-        const float MOVE_SPEED = 5.0f;
+        const float MOVE_SPEED = 10.0f;
         float deltaT;
         glm::vec3 m = glm::vec3(0.0f), r = glm::vec3(0.0f);
         bool fire = false;
@@ -572,10 +436,11 @@ protected:
                 Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
                 std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
                 
-                for(int i = 0; i < vertex_pairs.size()-1; i++){
-                    if(segmentsIntersect(oldPos, Pos, vertex_pairs[i].first,  vertex_pairs[i].second )){
-                        Pos = oldPos; //rollback change
-                        std::cout << "collision\n\n";
+                for(auto &coppia : vertex_pairs){
+                    if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
+                        Pos = oldPos;
+                        std::cout << "Collision detected \n\n";
+                        break;
                     }
                 }
                 
