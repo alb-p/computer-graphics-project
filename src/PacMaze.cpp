@@ -106,6 +106,7 @@ protected:
     float *usePitch;
     int currScene = 0;
     float Ar;
+    float doorAngle = 0.0f;
     glm::vec3 Pos;
     glm::vec3 oldPos;
     float Yaw;
@@ -114,12 +115,13 @@ protected:
     bool gameStarted = false;
     bool gameWon = false;
     
-    std::vector<std::string> landscape =  {"pavimento","sky", "provaBound", "grave"};
+    std::vector<std::string> landscape =  {"pavimento", "maze", "sky", "grave", "door"};
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
     glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
     glm::vec3 item3Position =  glm::vec3(0.0, 0.0, -35.0);
     glm::vec3 trap1Position =  glm::vec3(-10.0, 0.0, -10.0);
+    glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
     CollectibleItem object2 = CollectibleItem(item2Position,false,"objectToCollect2");
@@ -339,6 +341,7 @@ protected:
         const float ROT_SPEED = glm::radians(120.0f);
         const float MOVE_SPEED = 10.0f;
         float deltaT;
+        
         glm::vec3 m = glm::vec3(0.0f), r = glm::vec3(0.0f);
         bool fire = false;
         bool start = false;
@@ -469,7 +472,8 @@ protected:
                 if(CheckCollision(Pos, trap1Position, 1)){
                     //gameWon = false;
                     //game_state = ended;
-                    mazeVisible = false;
+                    //mazeVisible = false;
+                    doorAngle = 90.0f;
                 }
                 WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
                 Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
@@ -509,12 +513,20 @@ protected:
                     SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                     SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                 }
+
                 
                 // Draw the landscape
                 for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
-                    
-                    if (*SC.I[i].id == "objectToCollect") {
+                    if(*SC.I[i].id == "door"){
+                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+                        ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr; 
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                    }
+                    else if (*SC.I[i].id == "objectToCollect") {
                         if (object1.isCollected) {
                             glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
                             glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);

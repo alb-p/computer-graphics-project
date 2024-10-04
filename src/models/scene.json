@@ -3,6 +3,7 @@
         {"id": "grave",  "model": "models/grave.mgcg", "format":"MGCG"},
         {"id": "geo",  "model": "models/LargePlane.obj",       "format":"OBJ"},
         {"id": "dome", "model": "models/sphere_smooth.gltf", "format":"GLTF"},
+        {"id": "door", "model": "models/door.gltf", "format":"GLTF"},
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
@@ -13,9 +14,10 @@
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
+        {"id": "doorTexture", "texture": "textures/Door_BaseColor.jpg"},
         {"id": "graveTexture", "texture": "textures/grave.png"},
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"},
-        {"id": "skyT", "texture": "textures/provaText.png"}
+        {"id": "skyT", "texture": "textures/provaText.hdr"}
 	],
 	"instances": [
         {"id": "maze", "model": "mazeX", "texture": "mazeTexture", "transform":
@@ -27,7 +29,12 @@
             [0.5, 0, 0, -10,
             0, 0.5, 0, 0.4,
             0, 0,0.5, -10,
-            0, 0, 0, 1]},     
+            0, 0, 0, 1]},
+        {"id": "door", "model": "door", "texture": "doorTexture", "transform":
+            [1,0,0,-13,
+            0,1,0,0,
+            0,0,1,37.83,
+            0,0,0,1]},     
         {"id": "objectToCollect", "model": "key", "texture": "keysTexture", "transform":
             [0.01, 0, 0, -15,
             0,0.01, 0, 0.5,
