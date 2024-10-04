@@ -114,7 +114,7 @@ protected:
     bool gameStarted = false;
     bool gameWon = false;
     
-    std::vector<std::string> landscape =  {"pavimento","apar", "provaBound", "grave"};
+    std::vector<std::string> landscape =  {"pavimento","sky", "provaBound", "grave"};
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
     glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
@@ -331,7 +331,7 @@ protected:
         const float FOVy = glm::radians(45.0f);
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
-        const glm::vec3 StartingPosition = glm::vec3(-45.0, 0.0, 130.0);
+        const glm::vec3 StartingPosition = glm::vec3(-10.0, 0.0, 0.0);
         const float camHeight = 1.0f;
         const float camDist = 3.5f;
         const float minPitch = glm::radians(-8.75f);

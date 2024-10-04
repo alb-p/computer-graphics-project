@@ -5,21 +5,19 @@
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
-        {"id": "apart", "model": "models/apartment_003.mgcg", "format": "MGCG"},
-        {"id": "maze", "model": "models/scene.gltf", "format": "GLTF"},
-        {"id": "mazeX", "model": "models/mazegenerated.gltf", "format":"GLTF"}
+        {"id": "mazeX", "model": "models/mazegenerated2.gltf", "format":"GLTF"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
-        {"id": "t5", "texture": "models/apartment_003.png"},
         {"id": "t6", "texture": "textures/geo.png"},
         {"id": "t7", "texture": "textures/Colors2.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
         {"id": "graveTexture", "texture": "textures/grave.png"},
-        {"id": "mazeTexture", "texture": "textures/walls.jpeg"}
+        {"id": "mazeTexture", "texture": "textures/walls.jpeg"},
+        {"id": "skyT", "texture": "textures/provaText.hdr"}
 	],
 	"instances": [
-        {"id": "maze", "model": "mazeX", "texture": "t1", "transform":
+        {"id": "maze", "model": "mazeX", "texture": "mazeTexture", "transform":
             [1,0,0,0,
             0,1,0,0,
             0,0,1,0,
@@ -48,34 +46,19 @@
             0, 0,0.01, -35,
             0, 0, 0, 1]},
         {"id": "c1", "model": "character", "texture": "t7",  "transform":
-            [10, 0, 0, 0,
-            0,10, 0, 0,
-            0, 0,10, 0,
+            [1, 0, 0, 0,
+            0,1, 0, 0,
+            0, 0,1, 0,
             0, 0, 0, 1] },
         {"id": "pavimento", "model": "geo", "texture": "t1",
             "transform":[100, 0, 0, 0,
                     0,100, 0, 0,
                     0, 0,100, 0,
                     0, 0, 0, 1] },
-        {"id": "apar", "model": "apart","texture":"t5",
-        "transform":[1, 0, 0, 15,
-                0,1, 0, 0,
-                0, 0,1, 15,
-                0, 0, 0, 1] },
-        {"id": "apar2", "model": "apart","texture":"t5",
-        "transform":[1, 0, 0, 50,
-                0,1, 0, 0,
-                0, 0,1, 50,
-                0, 0, 0, 1] },
-        {"id": "apar3", "model": "apart","texture":"t5",
-        "transform":[2, 0, 0, 30,
-                0,2, 0, 0,
-                0, 0,2, 30,
-                0, 0, 0, 1] },
-        {"id": "sky", "model": "sky", "texture": "t3",
-        "transform": [100, 0, 0, 0,
-                        0, 100, 0, 0,
-                        0, 0, 100, 0,
+        {"id": "sky", "model": "geo", "texture": "skyT",
+        "transform": [10, 0, 0, 0,
+                        0, 10, 0,5,
+                        0, 0, 10, 0,
                         0, 0, 0, 1]}
         
 	]
