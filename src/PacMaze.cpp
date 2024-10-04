@@ -345,6 +345,8 @@ protected:
         
         bool hideMaze = false;
         bool mazeVisible = true;
+        glm::vec3 subjScaleFactor = glm::vec3(1.0,1.0,1.0);
+
         getSixAxis(deltaT, m, r, fire, start, hideMaze);
         static glm::vec3 Pos = StartingPosition;
         glm::mat4 ViewPrjOld = glm::mat4(1);
@@ -465,8 +467,9 @@ protected:
                     //PlaySoundEffect("collect.wav");
                 }
                 if(CheckCollision(Pos, trap1Position, 1)){
-                    gameWon = false;
-                    game_state = ended;
+                    //gameWon = false;
+                    //game_state = ended;
+                    mazeVisible = false;
                 }
                 WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
                 Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
@@ -480,7 +483,7 @@ protected:
                     if(doSegmentsIntersect(Pos, cameraPos, coppia.second, coppia.first)){
                         camDist = 0.01f;
                         //camHeight = camHeight/2;
-                       
+                        subjScaleFactor = glm::vec3(0.0f,0.0f,0.0f);
                         target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
                         cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
                      
@@ -499,8 +502,7 @@ protected:
                 // Draw the subject in the scene
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
-                                        
-                    ubo.mMat = WM * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
+                    ubo.mMat = WM * glm::scale(glm::mat4(1.0f),subjScaleFactor) *glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     

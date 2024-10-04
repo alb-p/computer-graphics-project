@@ -15,7 +15,7 @@
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
         {"id": "graveTexture", "texture": "textures/grave.png"},
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"},
-        {"id": "skyT", "texture": "textures/provaText.hdr"}
+        {"id": "skyT", "texture": "textures/provaText.png"}
 	],
 	"instances": [
         {"id": "maze", "model": "mazeX", "texture": "mazeTexture", "transform":
