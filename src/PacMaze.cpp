@@ -333,7 +333,7 @@ protected:
         const float FOVy = glm::radians(45.0f);
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
-        const glm::vec3 StartingPosition = glm::vec3(-10.0, 0.0, 0.0);
+        const glm::vec3 StartingPosition = glm::vec3(-12.38, 0.0, -10.0);
         float camHeight = 0.5f;
         float camDist = 1.5f;
         const float minPitch = glm::radians(-8.75f);
@@ -472,7 +472,9 @@ protected:
                 if(CheckCollision(Pos, trap1Position, 1)){
                     //gameWon = false;
                     //game_state = ended;
-                    //mazeVisible = false;
+                    mazeVisible = false;
+                }
+                if(CheckCollision(Pos, doorPosition, 1)){
                     doorAngle = 90.0f;
                 }
                 WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
@@ -519,7 +521,7 @@ protected:
                 for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
                     if(*SC.I[i].id == "door"){
-                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0f, 1.0f, 0.0f));
+                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0f, 0.1f, 0.0f));
                         ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr; 
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
