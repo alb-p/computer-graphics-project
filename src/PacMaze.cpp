@@ -332,8 +332,8 @@ protected:
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
         const glm::vec3 StartingPosition = glm::vec3(-10.0, 0.0, 0.0);
-        const float camHeight = 1.0f;
-        const float camDist = 3.5f;
+        float camHeight = 0.5f;
+        float camDist = 1.5f;
         const float minPitch = glm::radians(-8.75f);
         const float maxPitch = glm::radians(60.0f);
         const float ROT_SPEED = glm::radians(120.0f);
@@ -473,6 +473,20 @@ protected:
                 Prj[1][1] *= -1;
                 target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
                 cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
+                
+  
+                
+                for(auto &coppia : vertex_pairs){
+                    if(doSegmentsIntersect(Pos, cameraPos, coppia.second, coppia.first)){
+                        camDist = 0.01f;
+                        //camHeight = camHeight/2;
+                       
+                        target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
+                        cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
+                     
+                        break;
+                    }
+                }
                 View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
                 ViewPrj = Prj * View;
                 if (ViewPrjOld == glm::mat4(1))
@@ -482,7 +496,6 @@ protected:
                 gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
                 gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
                 gubo.eyePos = glm::vec3(100.0, 100.0, 100.0);
-
                 // Draw the subject in the scene
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
