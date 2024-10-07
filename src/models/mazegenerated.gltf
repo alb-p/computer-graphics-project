@@ -95,61 +95,61 @@
 		{
 			"bufferView":0,
 			"componentType":5126,
-			"count":886,
+			"count":3864,
 			"max":[
-				33.49539566040039,
+				33.74539566040039,
 				3.125735282897949,
-				37.96836471557617
+				38.08038330078125
 			],
 			"min":[
-				-41.5440559387207,
+				-41.765865325927734,
 				0.00026428699493408203,
-				-37.18087387084961
+				-37.43087387084961
 			],
 			"type":"VEC3"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":886,
+			"count":3864,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":2,
 			"componentType":5126,
-			"count":886,
+			"count":3864,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":3,
 			"componentType":5123,
-			"count":1644,
+			"count":6822,
 			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":10632,
+			"byteLength":46368,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":10632,
-			"byteOffset":10632,
+			"byteLength":46368,
+			"byteOffset":46368,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":7088,
-			"byteOffset":21264,
+			"byteLength":30912,
+			"byteOffset":92736,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":3288,
-			"byteOffset":28352,
+			"byteLength":13644,
+			"byteOffset":123648,
 			"target":34963
 		}
 	],
@@ -161,8 +161,8 @@
 	],
 	"buffers":[
 		{
-			"byteLength":31640,
-			"uri":"mazegenerated2.bin"
+			"byteLength":137292,
+			"uri":"mazegenerated.bin"
 		}
 	]
 }

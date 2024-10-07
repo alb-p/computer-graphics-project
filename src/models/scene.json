@@ -7,7 +7,7 @@
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
-        {"id": "mazeX", "model": "models/mazegenerated2.gltf", "format":"GLTF"}
+        {"id": "mazeX", "model": "models/mazegenerated.gltf", "format":"GLTF"}
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
