@@ -116,11 +116,12 @@ protected:
     bool gameWon = false;
     
     std::vector<std::string> landscape =  {"pavimento", "maze", "sky", "grave", "door"};
+    glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
     glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
     glm::vec3 item3Position =  glm::vec3(0.0, 0.0, -35.0);
-    glm::vec3 trap1Position =  glm::vec3(-10.0, 0.0, -10.0);
+    glm::vec3 trap1Position =  glm::vec3(0.0, 0.0, 0.0);
     glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -349,6 +350,7 @@ protected:
         bool hideMaze = false;
         bool mazeVisible = true;
         glm::vec3 subjScaleFactor = glm::vec3(1.0,1.0,1.0);
+        scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
 
         getSixAxis(deltaT, m, r, fire, start, hideMaze);
         static glm::vec3 Pos = StartingPosition;
@@ -456,6 +458,13 @@ protected:
                 Roll   = Roll  - ROT_SPEED * deltaT * r.z;
                 Roll   = Roll < glm::radians(-175.0f) ? glm::radians(-175.0f) :
                 (Roll > glm::radians( 175.0f) ? glm::radians( 175.0f) : Roll);
+                
+                WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
+                Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
+                Prj[1][1] *= -1;
+                target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
+                cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
+                
         
                 if (!object1.isCollected && CheckCollision(Pos, item1Position, 2)) {
                     object1.isCollected = true;
@@ -469,19 +478,9 @@ protected:
                     object3.isCollected = true;
                     //PlaySoundEffect("collect.wav");
                 }
-                if(CheckCollision(Pos, trap1Position, 1)){
-                    //gameWon = false;
-                    //game_state = ended;
-                    mazeVisible = false;
-                }
                 if(CheckCollision(Pos, doorPosition, 1)){
                     doorAngle = 90.0f;
                 }
-                WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
-                Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
-                Prj[1][1] *= -1;
-                target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
-                cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
                 
   
                 
@@ -496,12 +495,38 @@ protected:
                         break;
                     }
                 }
+                
                 View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
+                
+               
+                
+                
+                
+                if(CheckCollision(Pos, trap1Position, 1)){
+                    
+                    //queste due righe per fare perdere - quindi trappola vera
+                    //gameWon = false;
+                    //game_state = ended;
+                    
+                    //questa riga fa hint che nasconde il labirinto temporaneamente
+                    //mazeVisible = false;
+                    
+                    //queste righe hint che fanno vedere dall'alto
+                    scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                    subjScaleFactor = glm::vec3(3.0,3.0,3.0);
+                    cameraPos.y = 100.0f;
+                    glm::vec3 cameraTarget = Pos;
+                    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+                    View = glm::lookAt(cameraPos, cameraTarget, upVector);
+                }
+                
                 ViewPrj = Prj * View;
+                
                 if (ViewPrjOld == glm::mat4(1))
                     ViewPrjOld = ViewPrj;
                 ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
                 ViewPrjOld = ViewPrj;
+                
                 gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
                 gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
                 gubo.eyePos = glm::vec3(100.0, 100.0, 100.0);
@@ -629,7 +654,15 @@ protected:
                             SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                         }
                     }
-                    else{ //praticamente dentro questo else fa solo sky e pavimento
+                    else if (*SC.I[i].id == "sky"){
+                        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleFactorSkyToHide);
+                        ubo.mMat =  SC.I[i].Wm * scaleMatrix * baseTr;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                    }
+                    else{ //praticamente dentro questo else fa solo pavimento
                         ubo.mMat = SC.I[i].Wm * baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
