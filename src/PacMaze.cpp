@@ -115,13 +115,14 @@ protected:
     bool gameStarted = false;
     bool gameWon = false;
     
-    std::vector<std::string> landscape =  {"pavimento", "maze", "sky", "grave", "door"};
+    std::vector<std::string> landscape =  {"pavimento", "maze", "sky", "portal1","portal2","portal3", "door", "grave"};
     glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
     glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
     glm::vec3 item3Position =  glm::vec3(0.0, 0.0, -35.0);
     glm::vec3 trap1Position =  glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
     glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -500,24 +501,27 @@ protected:
                 
                
                 
+                if(CheckCollision(Pos, portalPosition, 1)){
+                    Pos = glm::vec3(-17.4279, 0, 19.2095);
+                }
                 
                 
                 if(CheckCollision(Pos, trap1Position, 1)){
                     
                     //queste due righe per fare perdere - quindi trappola vera
-                    //gameWon = false;
-                    //game_state = ended;
+                    gameWon = false;
+                    game_state = ended;
                     
                     //questa riga fa hint che nasconde il labirinto temporaneamente
                     //mazeVisible = false;
                     
                     //queste righe hint che fanno vedere dall'alto
-                    scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                    /*scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
                     subjScaleFactor = glm::vec3(3.0,3.0,3.0);
                     cameraPos.y = 100.0f;
                     glm::vec3 cameraTarget = Pos;
                     glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-                    View = glm::lookAt(cameraPos, cameraTarget, upVector);
+                    View = glm::lookAt(cameraPos, cameraTarget, upVector);*/
                 }
                 
                 ViewPrj = Prj * View;
