@@ -115,14 +115,20 @@ protected:
     bool gameStarted = false;
     bool gameWon = false;
     
-    std::vector<std::string> landscape =  {"pavimento", "maze", "sky", "portal1","portal2","portal3", "door", "grave"};
+    std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5"};
     glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
     std::vector<std::string> subject = {"c1"};
-    glm::vec3 item1Position =  glm::vec3(-15.0, 0.0, -15.0);
-    glm::vec3 item2Position =  glm::vec3(-8.0, 0.0, -20.0);
-    glm::vec3 item3Position =  glm::vec3(0.0, 0.0, -35.0);
-    glm::vec3 trap1Position =  glm::vec3(0.0, 0.0, 0.0);
+    glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
+    glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
+    glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
+    glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
+    glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
+    glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
+    glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
+    glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
     glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
+    glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
+    glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
     glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -425,12 +431,12 @@ protected:
                 if(object3.isCollected){
                     score++;
                 }
-                
+                /*
                 if(score == 3){
                     gameWon = true;
                     game_state = ended;
                     break;
-                }
+                }*/
                 
                 //compute movement
                 oldPos = Pos; //to set again in case of collision with walls
@@ -479,7 +485,7 @@ protected:
                     object3.isCollected = true;
                     //PlaySoundEffect("collect.wav");
                 }
-                if(CheckCollision(Pos, doorPosition, 1)){
+                if(CheckCollision(Pos, doorPosition, 1) /*&& score == 3*/){
                     doorAngle = 90.0f;
                 }
                 
@@ -504,24 +510,25 @@ protected:
                 if(CheckCollision(Pos, portalPosition, 1)){
                     Pos = glm::vec3(-17.4279, 0, 19.2095);
                 }
-                
-                
-                if(CheckCollision(Pos, trap1Position, 1)){
-                    
-                    //queste due righe per fare perdere - quindi trappola vera
-                    gameWon = false;
-                    game_state = ended;
-                    
-                    //questa riga fa hint che nasconde il labirinto temporaneamente
-                    //mazeVisible = false;
-                    
+                if(CheckCollision(Pos, hint1Position,1)){
                     //queste righe hint che fanno vedere dall'alto
-                    /*scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                    scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
                     subjScaleFactor = glm::vec3(3.0,3.0,3.0);
                     cameraPos.y = 100.0f;
                     glm::vec3 cameraTarget = Pos;
                     glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-                    View = glm::lookAt(cameraPos, cameraTarget, upVector);*/
+                    View = glm::lookAt(cameraPos, cameraTarget, upVector);
+                }
+                
+                if(CheckCollision(Pos, hint2Position, 1)){
+                    //questa riga fa hint che nasconde il labirinto temporaneamente
+                    mazeVisible = false;
+                }
+                
+                if(CheckCollision(Pos, trap1Position, 1) ||CheckCollision(Pos, trap2Position, 1) ||CheckCollision(Pos, trap3Position, 1) ||CheckCollision(Pos, trap4Position, 1) || CheckCollision(Pos, trap5Position, 1)){
+                    //queste due righe per fare perdere - quindi trappola vera
+                    gameWon = false;
+                    game_state = ended;
                 }
                 
                 ViewPrj = Prj * View;
@@ -550,8 +557,10 @@ protected:
                 for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
                     if(*SC.I[i].id == "door"){
-                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0f, 0.1f, 0.0f));
-                        ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr; 
+                        glm::vec3 centerOfRot = glm::vec3(-13.3807,0.0,37.8771);
+                        
+                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0,1.0,0.0));
+                        ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
@@ -638,6 +647,20 @@ protected:
                             SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                             SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                         }
+                    }
+                    else if (*SC.I[i].id == "hint1" || *SC.I[i].id == "hint2"){
+                        //glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(float(sin(glfwGetTime()*100))) * deltaT),1.0f);
+                        //glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
+                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+                        float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
+                        glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
+                        
+                        ubo.mMat = SC.I[i].Wm * /*translationMatrix */ continuousRotation * rotationMatrix * baseTr;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
                     else if (*SC.I[i].id == "maze"){
                         if(mazeVisible){

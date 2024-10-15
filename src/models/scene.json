@@ -7,6 +7,7 @@
         {"id": "portalCube", "model": "models/cube.gltf", "format":"GLTF"},
         {"id": "portalLava", "model": "models/portale.gltf", "format":"GLTF"},
         {"id": "portalLight", "model": "models/icosphere.gltf", "format":"GLTF"},
+        {"id": "hint", "model": "models/hint.gltf", "format":"GLTF"},
         {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
@@ -23,6 +24,7 @@
         {"id": "portalLavaTexture", "texture": "textures/Lava_05_basecolor-2K.png"},
         {"id": "portalLightTexture", "texture": "textures/Lava_05_emissive-2K.jpg"},
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"},
+        {"id": "hintTexture", "texture": "textures/default_baseColor.png"},
         {"id": "skyT", "texture": "textures/provaText.hdr"}
 	],
 	"instances": [
@@ -31,6 +33,16 @@
             0,1,0,0,
             0,0,1,0,
             0,0,0,1]},
+        {"id": "hint1", "model": "hint", "texture": "hintTexture", "transform":
+            [1.5,0,0,-3.83,
+                0,1.5,0,0.5,
+                0,0,1.5,5.48,
+                0,0,0,1]},
+        {"id": "hint2", "model": "hint", "texture": "hintTexture", "transform":
+            [1.5,0,0,23.675,
+                0,1.5,0,0.5,
+                0,0,1.5,3.19,
+                0,0,0,1]},
         {"id": "portal1", "model": "portalCube", "texture":  "portalCubeTexture", "transform":
             [0.5, 0, 0, 30,
             0, 0.5, 0,-0.75,
@@ -46,30 +58,50 @@
             0, 0.5, 0,-0.75,
             0, 0,0.5, -21.54,
             0, 0, 0, 1]},
-        {"id": "grave", "model": "grave", "texture": "graveTexture", "transform":
-            [0.5, 0, 0, 0,
+        {"id": "grave1", "model": "grave", "texture": "graveTexture", "transform":
+            [0.5, 0, 0, -28.5,
                        0, 0.5, 0, 0.4,
-                       0, 0,0.5, 0,
+                       0, 0,0.5, -16.4655,
                        0, 0, 0, 1]},
+        {"id": "grave2", "model": "grave", "texture": "graveTexture", "transform":
+                           [0.5, 0, 0, -38.8831,
+                                      0, 0.5, 0, 0.4,
+                                      0, 0,0.5, 10.5052,
+                                      0, 0, 0, 1]},
+        {"id": "grave3", "model": "grave", "texture": "graveTexture", "transform":
+                                          [0.5, 0, 0, -13.0604,
+                                                     0, 0.5, 0, 0.4,
+                                                     0, 0,0.5, -25.3984,
+                                                     0, 0, 0, 1]},
+        {"id": "grave4", "model": "grave", "texture": "graveTexture", "transform":
+                                                         [0.5, 0, 0, 10.9513,
+                                                                    0, 0.5, 0, 0.4,
+                                                                    0, 0,0.5, 31.8355,
+                                                                    0, 0, 0, 1]},
+        {"id": "grave5", "model": "grave", "texture": "graveTexture", "transform":
+                                                                        [0.5, 0, 0, 24.4105,
+                                                                                   0, 0.5, 0, 0.4,
+                                                                                   0, 0,0.5, -34.1741,
+                                                                                   0, 0, 0, 1]},
         {"id": "door", "model": "door", "texture": "doorTexture", "transform":
             [1,0,0,-13,
             0,1,0,0,
             0,0,1,37.83,
             0,0,0,1]},     
         {"id": "objectToCollect", "model": "key", "texture": "keysTexture", "transform":
-            [0.01, 0, 0, -15,
+            [0.01, 0, 0, -34.7,
             0,0.01, 0, 0.5,
-            0, 0,0.01, -15,
+            0, 0,0.01, -32.3,
             0, 0, 0, 1]},
         {"id": "objectToCollect2", "model": "key", "texture": "keysTexture", "transform":
-            [0.01, 0, 0, -8,
+            [0.01, 0, 0, -17.75,
             0,0.01, 0, 0.5,
-            0, 0,0.01, -20,
+            0, 0,0.01, -0.93,
             0, 0, 0, 1]},
         {"id": "objectToCollect3", "model": "key", "texture": "keysTexture", "transform":
-            [0.01, 0, 0, 0,
+            [0.01, 0, 0, 21.65,
             0,0.01, 0, 0.5,
-            0, 0,0.01, -35,
+            0, 0,0.01, 33.64,
             0, 0, 0, 1]},
         {"id": "c1", "model": "character", "texture": "t7",  "transform":
             [1, 0, 0, 0,
