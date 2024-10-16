@@ -117,6 +117,7 @@ protected:
     
     std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5"};
     glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
+    glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
     std::vector<std::string> subject = {"c1"};
     glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
     glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
@@ -142,7 +143,7 @@ protected:
         windowHeight = 720;
         windowTitle = "PAC-MAZE";
         windowResizable = GLFW_TRUE;
-        initialBackgroundColor = {0.0f, 0.85f, 1.0f, 1.0f};
+        initialBackgroundColor = {36/255,30/255,43/255, 1.0f};
         uniformBlocksInPool = 25 * 2 + 2;
         texturesInPool = 29 + 1;
         setsInPool = 29 + 1;
@@ -358,6 +359,7 @@ protected:
         bool mazeVisible = true;
         glm::vec3 subjScaleFactor = glm::vec3(1.0,1.0,1.0);
         scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
+        scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
 
         getSixAxis(deltaT, m, r, fire, start, hideMaze);
         static glm::vec3 Pos = StartingPosition;
@@ -450,11 +452,13 @@ protected:
                 Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
                 std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
                 
-                for(auto &coppia : vertex_pairs){
-                    if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
-                        Pos = oldPos;
-                        std::cout << "Collision detected \n\n";
-                        break;
+                if(Pos.y == 0){
+                    for(auto &coppia : vertex_pairs){
+                        if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
+                            Pos = oldPos;
+                            std::cout << "Collision detected \n\n";
+                            break;
+                        }
                     }
                 }
                 
@@ -513,6 +517,7 @@ protected:
                 if(CheckCollision(Pos, hint1Position,1)){
                     //queste righe hint che fanno vedere dall'alto
                     scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                    scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
                     subjScaleFactor = glm::vec3(3.0,3.0,3.0);
                     cameraPos.y = 100.0f;
                     glm::vec3 cameraTarget = Pos;
@@ -558,8 +563,9 @@ protected:
                     int i = SC.InstanceIds[it->c_str()];
                     if(*SC.I[i].id == "door"){
                         glm::vec3 centerOfRot = glm::vec3(-13.3807,0.0,37.8771);
-                        
-                        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0,1.0,0.0));
+
+                        glm::mat4 rotationMatrix =  glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0,1.0,0.0));
+                     
                         ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
@@ -689,7 +695,16 @@ protected:
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
-                    else{ //praticamente dentro questo else fa solo pavimento
+                    else if (*SC.I[i].id == "pavimento"){
+                        glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f),scaleFactorFloorToHide);
+                        ubo.mMat = SC.I[i].Wm *scaleMatrix* baseTr;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
+                        
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                    }
+                    else {
                         ubo.mMat = SC.I[i].Wm * baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
