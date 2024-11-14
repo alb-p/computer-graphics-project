@@ -4,7 +4,11 @@
 #include <iostream>
 #include <format>
 #include "modules/edges_output.cpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/string_cast.hpp"
 
+
+/**/
 bool doSegmentsIntersect(glm::vec3 P1, glm::vec3 P2, glm::vec3 Q1, glm::vec3 Q2) {
     glm::vec3 r = P2 - P1;
     glm::vec3 s = Q2 - Q1;
@@ -43,6 +47,20 @@ struct VertexOverlay {
     glm::vec2 pos;
     glm::vec2 UV;
 };
+
+
+
+struct LightVertex {
+    glm::vec3 pos;
+    glm::vec2 UV;
+};
+
+struct LightUniformBufferObject {
+    alignas(16) glm::mat4 mvpMat;
+};
+
+
+
 struct CollectibleItem {
     glm::vec3 position;
     bool isCollected;
@@ -59,11 +77,25 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 mMat;
     alignas(16) glm::mat4 nMat;
 };
+
+
 struct GlobalUniformBufferObject {
-    alignas(16) glm::vec3 lightDir;
-    alignas(16) glm::vec4 lightColor;
+    struct {
+    alignas(16) glm::vec3 v;
+    } lightDir[5];
+    struct {
+    alignas(16) glm::vec3 v;
+    } lightPos[5];
+    alignas(16) glm::vec4 lightColor[5];
+    alignas(4) float cosIn;
+    alignas(4) float cosOut;
     alignas(16) glm::vec3 eyePos;
+    alignas(16) glm::vec4 eyeDir;
+    alignas(16) glm::vec4 lightOn;
+    alignas(4) bool lightType = 0;
 };
+
+
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 norm;
@@ -93,12 +125,12 @@ void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
 protected:
     GameState game_state = notStarted;
-    DescriptorSetLayout DSL, DSLOverlay;
-    VertexDescriptor VD, VOverlay;
-    Pipeline P, POverlay;
-    Model MText[3], MHUD[4];
-    DescriptorSet DSText[3], DSHUD[4];
-    Texture TText[3], THUD[4];
+    DescriptorSetLayout DSL, DSLOverlay, DSLLight;
+    VertexDescriptor VD, VOverlay, VDLight;
+    Pipeline P, POverlay, PLight;
+    Model MText[3], MHUD[4], MLight;
+    DescriptorSet DSText[3], DSHUD[4], DSLight;
+    Texture TText[3], THUD[4], TLight;
     OverlayUniformBlock uboText[3], uboHUD[4];
     Scene SC;
     glm::vec3 **deltaP;
@@ -114,23 +146,26 @@ protected:
     int score = 0;
     bool gameStarted = false;
     bool gameWon = false;
+    bool lightDirectional = false;
+
     
     std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5"};
-    glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
-    glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
-    std::vector<std::string> subject = {"c1"};
-    glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
-    glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
-    glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
-    glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
-    glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
-    glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
-    glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
-    glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
-    glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
-    glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
-    glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
-    glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
+        glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
+        glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
+        std::vector<std::string> subject = {"c1"};
+        glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
+        glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
+        glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
+        glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
+        glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
+        glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
+        glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
+        glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
+        glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
+        glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
+        glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
+        glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
+
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
     CollectibleItem object2 = CollectibleItem(item2Position,false,"objectToCollect2");
@@ -167,6 +202,21 @@ protected:
                 {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
                 {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
             });
+        
+        DSLLight.init(this, {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
+            });
+        
+        VDLight.init(this, {
+                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
+                }, {
+                  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
+                         sizeof(glm::vec3), POSITION},
+                  {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
+                         sizeof(glm::vec2), UV}
+                });
+        
         VD.init(this, {
             {0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX}
         }, {
@@ -185,12 +235,45 @@ protected:
                   {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, UV),
                          sizeof(glm::vec2), UV}
             });
+        
+        VDLight.init(this, {
+                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
+                }, {
+                  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
+                         sizeof(glm::vec3), POSITION},
+                  {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
+                         sizeof(glm::vec2), UV}
+                });
+        
+     /*
+        DSLPoint.init(this, {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS},  // Point lights
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}  // Texture
+        });
+     */
+        
+        
         P.init(this, &VD, "shaders/PhongVert.spv", "shaders/PhongFrag.spv", {&DSL});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, true);
+        
+        
+        //
+        PLight.init(this, &VDLight, "shaders/LightVert.spv", "shaders/LightFrag.spv", {&DSLLight});
+        PLight.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
+            VK_CULL_MODE_NONE, true);
+        
+        
+        MLight.init(this, &VDLight, "models/Sphere.obj", OBJ);
+        //
+        
+        /*
+        PPointLight.init(this, &VD, "shaders/PointLightVert.spv", "shaders/PointLightFrag.spv", {&DSLPoint});
+        PPointLight.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false);
+        */
         
         //resize whole screens
         std::vector<VertexOverlay> vertexData;
@@ -238,6 +321,9 @@ protected:
         {
             THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
         }
+        
+        TLight.init(this, "textures/2k_sun.jpg");
+        
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
         Yaw = 0;
@@ -255,6 +341,15 @@ protected:
         P.create();
         POverlay.create();
         SC.pipelinesAndDescriptorSetsInit(DSL);
+        
+        PLight.create();
+        
+        DSLight.init(this, &DSLLight, {
+            {0, UNIFORM, sizeof(LightUniformBufferObject), nullptr},
+            {1, TEXTURE, 0, &TLight}
+            });
+        
+        
         for (int i = 0; i < 3; i++){
             DSText[i].init(this, &DSLOverlay, {
                 {0, UNIFORM, sizeof(OverlayUniformBlock), nullptr},
@@ -273,6 +368,7 @@ protected:
         // Cleanup pipelines
         P.cleanup();
         POverlay.cleanup();
+        PLight.cleanup();
         SC.pipelinesAndDescriptorSetsCleanup();
         for (int i = 0; i < 3; i++){
             DSText[i].cleanup();
@@ -299,8 +395,10 @@ protected:
             MHUD[i].cleanup();
         }
         DSLOverlay.cleanup();
+        DSLLight.cleanup();
         P.destroy();
         POverlay.destroy();
+        PLight.destroy();
         SC.localCleanup();
     }
     void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage) {
@@ -329,6 +427,14 @@ protected:
             uboHUD[i].visible = 0.0f;
             DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
         }
+        
+        PLight.bind(commandBuffer);
+        MLight.bind(commandBuffer);
+        DSLight.bind(commandBuffer, PLight, 0, currentImage);
+        
+        vkCmdDrawIndexed(commandBuffer,
+                static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
+        
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
@@ -350,18 +456,19 @@ protected:
         const float ROT_SPEED = glm::radians(120.0f);
         const float MOVE_SPEED = 10.0f;
         float deltaT;
-        
         glm::vec3 m = glm::vec3(0.0f), r = glm::vec3(0.0f);
         bool fire = false;
         bool start = false;
         
         bool hideMaze = false;
+        bool changeLight = false;
         bool mazeVisible = true;
         glm::vec3 subjScaleFactor = glm::vec3(1.0,1.0,1.0);
         scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
         scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
-
-        getSixAxis(deltaT, m, r, fire, start, hideMaze);
+    
+        getSixAxis(deltaT, m, r, fire, start, hideMaze, changeLight);
+        
         static glm::vec3 Pos = StartingPosition;
         glm::mat4 ViewPrjOld = glm::mat4(1);
         static float Yaw = glm::radians(0.0f);
@@ -371,6 +478,9 @@ protected:
         UniformBufferObject ubo{};
         GlobalUniformBufferObject gubo{};
 
+        if(changeLight){
+            lightDirectional = !lightDirectional;
+        }
         if(start){
             gameStarted = true;
             game_state = playing;
@@ -433,11 +543,12 @@ protected:
                 if(object3.isCollected){
                     score++;
                 }
+                
                 /*
                 if(score == 3){
-                    gameWon = true;
-                    game_state = ended;
-                    break;
+                gameWon = true;
+                game_state = ended;
+                break;
                 }*/
                 
                 //compute movement
@@ -475,7 +586,6 @@ protected:
                 Prj[1][1] *= -1;
                 target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
                 cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
-                
         
                 if (!object1.isCollected && CheckCollision(Pos, item1Position, 2)) {
                     object1.isCollected = true;
@@ -492,9 +602,9 @@ protected:
                 if(CheckCollision(Pos, doorPosition, 1) /*&& score == 3*/){
                     doorAngle = 90.0f;
                 }
-                
-  
-                
+                                
+                  
+                                
                 for(auto &coppia : vertex_pairs){
                     if(doSegmentsIntersect(Pos, cameraPos, coppia.second, coppia.first)){
                         camDist = 0.01f;
@@ -506,57 +616,147 @@ protected:
                         break;
                     }
                 }
-                
+                                
+                    View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
+                    
+                   
+                    
+                    if(CheckCollision(Pos, portalPosition, 1)){
+                        Pos = glm::vec3(-17.4279, 0, 19.2095);
+                    }
+                    if(CheckCollision(Pos, hint1Position,1)){
+                        //queste righe hint che fanno vedere dall'alto
+                        scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                        scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
+                        subjScaleFactor = glm::vec3(3.0,3.0,3.0);
+                        cameraPos.y = 100.0f;
+                        glm::vec3 cameraTarget = Pos;
+                        glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+                        View = glm::lookAt(cameraPos, cameraTarget, upVector);
+                    }
+                    
+                    if(CheckCollision(Pos, hint2Position, 1)){
+                        //questa riga fa hint che nasconde il labirinto temporaneamente
+                        mazeVisible = false;
+                    }
+                    
+                    if(CheckCollision(Pos, trap1Position, 1) ||CheckCollision(Pos, trap2Position, 1) ||CheckCollision(Pos, trap3Position, 1) ||CheckCollision(Pos, trap4Position, 1) || CheckCollision(Pos, trap5Position, 1)){
+                        //queste due righe per fare perdere - quindi trappola vera
+                        gameWon = false;
+                        game_state = ended;
+                    }
+                WM = glm::translate(glm::mat4(1.0), Pos) * glm::rotate(glm::mat4(1.0f), Yaw, glm::vec3(0,1,0));
+                Prj = glm::perspective(FOVy, Ar, nearPlane, farPlane);
+                Prj[1][1] *= -1;
+                target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
+                cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
                 View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
-                
-               
-                
-                if(CheckCollision(Pos, portalPosition, 1)){
-                    Pos = glm::vec3(-17.4279, 0, 19.2095);
-                }
-                if(CheckCollision(Pos, hint1Position,1)){
-                    //queste righe hint che fanno vedere dall'alto
-                    scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
-                    scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
-                    subjScaleFactor = glm::vec3(3.0,3.0,3.0);
-                    cameraPos.y = 100.0f;
-                    glm::vec3 cameraTarget = Pos;
-                    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-                    View = glm::lookAt(cameraPos, cameraTarget, upVector);
-                }
-                
-                if(CheckCollision(Pos, hint2Position, 1)){
-                    //questa riga fa hint che nasconde il labirinto temporaneamente
-                    mazeVisible = false;
-                }
-                
-                if(CheckCollision(Pos, trap1Position, 1) ||CheckCollision(Pos, trap2Position, 1) ||CheckCollision(Pos, trap3Position, 1) ||CheckCollision(Pos, trap4Position, 1) || CheckCollision(Pos, trap5Position, 1)){
-                    //queste due righe per fare perdere - quindi trappola vera
-                    gameWon = false;
-                    game_state = ended;
-                }
-                
                 ViewPrj = Prj * View;
-                
                 if (ViewPrjOld == glm::mat4(1))
                     ViewPrjOld = ViewPrj;
                 ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
                 ViewPrjOld = ViewPrj;
                 
+                
+                /*
                 gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
                 gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-                gubo.eyePos = glm::vec3(100.0, 100.0, 100.0);
+                */
+                
+                
+                //Buffer for point lights
+                /*for (int i=0; i < NUM_POINT_LIGHTS; i++) {
+                    gubo.eyePos = cameraPos;
+                    gubo.pointLightPositions[i] = glm::vec3(1.0 + i*5, 10.5, -5.0 + i*5);
+                    gubo.pointLightColors[i] = glm::vec4(1.0 + i*1, 5.0 + i*1.2, 5.0 + i*1.3, 3.0f + i*1);
+                    gubo.pointLightRadii[i] = 7.0f;
+                }
+                
+                gubo.pointLightPositions[0] = glm::vec3(15.0f, 8.0f, 15.0f);
+                gubo.pointLightColors[0] = glm::vec4(1.0 + 53.8, 5.0, 5.0 + 1.3, 3.0f + 72.2);
+                gubo.pointLightRadii[0] = 12.0f;
+                
+                gubo.pointLightPositions[1] = glm::vec3(0.0f, 5.0f, 0.0f);
+                gubo.pointLightColors[1] = glm::vec4(1.0 + 53.8, 5.0, 5.0 + 1.3, 3.0f + 72.2);
+                gubo.pointLightRadii[1] = 12.0f;
+                */
+                
+                
+                static bool debounce = false;
+                static int curDebounce = 0;
+                
+                gubo.lightType = lightDirectional;
+                /*
+                if(glfwGetKey(window, GLFW_KEY_L)) {
+                    if(!debounce) {
+                        debounce = true;
+                        curDebounce = GLFW_KEY_L;
+                        
+                        gubo.lightType = !gubo.lightType;
+                    }
+                } else {
+                    if((curDebounce == GLFW_KEY_L) && debounce) {
+                        debounce = false;
+                        curDebounce = 0;
+                    }
+                }
+                
+                if (gubo.lightType == 1)
+                    std::cout << "LightType : " << gubo.lightType;
+                */
+                
+                
+                /*
+                for(int i = 0; i <5; i++) {
+                    gubo.lightColor[i] = glm::vec4(1, 0, 0, 2);
+                    gubo.lightDir[i].v = glm::mat4(1) * glm::vec4(0,0,1,0);
+                    gubo.lightPos[i].v = glm::mat4(1) * glm::vec4(0,0,0,1);
+                }
+                */
+                
+                gubo.lightDir[0].v = glm::vec3(1, 1, 1);
+                gubo.lightColor[0] = glm::vec4(1, 1, 1, 0.5);
+                
+                
+                
+                gubo.lightColor[1] = glm::vec4(0, 1, 0, 0.5);
+                gubo.lightColor[2] = glm::vec4(0, 0, 1, 0.3);
+                gubo.lightColor[3] = glm::vec4(1, 1, 1, 0.5);
+                gubo.lightColor[4] = glm::vec4(1, 0, 0, 0.7);
+                
+                
+                gubo.lightPos[1].v = glm::vec3(10.0f, 8.0f, 15.0f);
+                gubo.lightPos[2].v = glm::vec3(15.0f, 15.0f, 15.0f);
+                gubo.lightPos[3].v = glm::vec3(20.0f, 8.0f, 15.0f);
+                gubo.lightPos[4].v = glm::vec3(0.0f, 8.0f, 0.0f);
+                
+                
+                gubo.cosIn = 0.4591524628390111;
+                gubo.cosOut = 0.5401793718338013;
+                
+                
+                gubo.eyePos = cameraPos;
+                gubo.lightOn = glm::vec4(1);
+                
+                /*
+                for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+                    std::cout << "Light " << i << " Position: " << glm::to_string(gubo.pointLightPositions[i]) << std::endl;
+                    std::cout << "Light " << i << " Color: " << glm::to_string(gubo.pointLightColors[i]) << std::endl;
+                }
+                */
+                
+                
                 // Draw the subject in the scene
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
-                    ubo.mMat = WM * glm::scale(glm::mat4(1.0f),subjScaleFactor) *glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
+                                        
+                    ubo.mMat = WM * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
                     SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                     SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                 }
-
                 
                 // Draw the landscape
                 for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
@@ -593,7 +793,8 @@ protected:
                             float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
                             glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
                             
-                            ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;                    ubo.mvpMat = ViewPrj * ubo.mMat;
+                            ubo.mMat = SC.I[i].Wm * translationMatrix * continuousRotation * rotationMatrix * baseTr;
+                            ubo.mvpMat = ViewPrj * ubo.mMat;
                             ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                             
                             SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
@@ -712,6 +913,11 @@ protected:
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
+                    
+                    LightUniformBufferObject lightUbo{};
+                    lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
+                    DSLight.map(currentImage, &lightUbo, sizeof(lightUbo), 0);
+                    
                 }
                 for (int i = 0; i < 4; i++)
                 {
