@@ -562,11 +562,15 @@ protected:
                 for (std::vector<std::string>::iterator it = landscape.begin(); it != landscape.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
                     if(*SC.I[i].id == "door"){
-                        glm::vec3 centerOfRot = glm::vec3(-13.3807,0.0,37.8771);
-
+                        glm::mat4 translationMatrix = glm::mat4(1.0f);
                         glm::mat4 rotationMatrix =  glm::rotate(glm::mat4(1.0f), glm::radians(doorAngle), glm::vec3(0.0,1.0,0.0));
-                     
-                        ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr;
+                        if(doorAngle == 90.0f){
+                            float tx = -0.5237f;
+                            float ty = 0.0f;
+                            float tz = -0.38f;
+                            translationMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(tx, ty, tz));
+                        }
+                        ubo.mMat = SC.I[i].Wm *rotationMatrix*  baseTr * translationMatrix;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
