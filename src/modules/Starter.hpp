@@ -1781,7 +1781,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 	
 	
 	// Control Wrapper
-	void handleGamePad(int id,  glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start, bool &hideMaze) {
+	void handleGamePad(int id,  glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start, bool &hideMaze, bool &changeLight) {
 		const float deadZone = 0.1f;
 		
 		if(glfwJoystickIsGamepad(id)) {
@@ -1811,6 +1811,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 				fire = fire | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_A] | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_B];
                 start = start | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_START];
                 hideMaze = hideMaze | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_B];
+                changeLight = changeLight | (bool)state.buttons[GLFW_GAMEPAD_BUTTON_A];
 			}
 		}
 	}
@@ -1819,7 +1820,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 	public:
 
 	
-	void getSixAxis(float &deltaT, glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start, bool &hideMaze) {
+	void getSixAxis(float &deltaT, glm::vec3 &m, glm::vec3 &r, bool &fire, bool &start, bool &hideMaze, bool &changeLight) {
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		static float lastTime = 0.0f;
 		
@@ -1858,7 +1859,7 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		if(glfwGetKey(window, GLFW_KEY_Q)) {
 			r.z = 1.0f;
 		}
-		if(glfwGetKey(window, GLFW_KEY_E)) {
+		/if(glfwGetKey(window, GLFW_KEY_L)) {
 			r.z = -1.0f;
 		}*/
 
@@ -1880,16 +1881,21 @@ std::cout << "Starting createInstance()\n"  << std::flush;
 		if(glfwGetKey(window, GLFW_KEY_F)) {
 			m.y = -1.0f;
 		}
+        if(glfwGetKey(window, GLFW_KEY_L) && changeLight) {
+            changeLight = false;
+        }else if(glfwGetKey(window, GLFW_KEY_L) && !changeLight){
+            changeLight = true;
+        }
 		
 		fire = glfwGetKey(window, GLFW_KEY_SPACE) | (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS);
         start = glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS;
         hideMaze = glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS;
 
     
-		handleGamePad(GLFW_JOYSTICK_1,m,r,fire,start, hideMaze);
-		handleGamePad(GLFW_JOYSTICK_2,m,r,fire,start, hideMaze);
-		handleGamePad(GLFW_JOYSTICK_3,m,r,fire,start, hideMaze);
-		handleGamePad(GLFW_JOYSTICK_4,m,r,fire,start, hideMaze);
+		handleGamePad(GLFW_JOYSTICK_1,m,r,fire,start, hideMaze,changeLight);
+		handleGamePad(GLFW_JOYSTICK_2,m,r,fire,start, hideMaze,changeLight);
+		handleGamePad(GLFW_JOYSTICK_3,m,r,fire,start, hideMaze,changeLight);
+		handleGamePad(GLFW_JOYSTICK_4,m,r,fire,start, hideMaze,changeLight);
 	}
 	
 	
