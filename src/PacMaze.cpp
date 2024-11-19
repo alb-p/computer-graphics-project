@@ -141,6 +141,7 @@ protected:
     float doorAngle = 0.0f;
     glm::vec3 Pos;
     glm::vec3 oldPos;
+    glm::vec3 ghostPosition_old;
     float Yaw;
     glm::vec3 InitialPos;
     int score = 0;
@@ -149,7 +150,7 @@ protected:
     bool lightDirectional = false;
 
     
-    std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5"};
+    std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5", "ghost"};
         glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
         glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
         std::vector<std::string> subject = {"c1"};
@@ -165,6 +166,7 @@ protected:
         glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
         glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
         glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
+        glm::vec3 ghostPosition =  glm::vec3(-12.38, 0.0, -10.0);
 
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -439,6 +441,12 @@ protected:
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
     
+    //ghost vect
+    glm::vec3 gx = glm::vec3(1.0f, 0.0f, 0.0f);
+    glm::vec3 gz = glm::vec3(0.0f, 0.0f, 1.0f);
+
+
+
     void updateUniformBuffer(uint32_t currentImage) {
         if(glfwGetKey(window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -551,6 +559,27 @@ protected:
                 break;
                 }*/
                 
+                // ghost movement
+                ghostPosition_old = ghostPosition;
+                
+                ghostPosition = ghostPosition + MOVE_SPEED * gx * deltaT;
+
+                ghostPosition  = ghostPosition + MOVE_SPEED* gz * deltaT;
+                // std::cout << "\nghost vect";
+                // std::cout <<  gx.x << ", " << gz.z << ";\n";
+                
+                for(auto &coppia : vertex_pairs){
+                        if(doSegmentsIntersect(ghostPosition, ghostPosition_old, coppia.second, coppia.first)){
+                            gx.x = (float(sin(glfwGetTime()*100)));                            
+                            gz.z = (float(cos(glfwGetTime()*100))); 
+                            ghostPosition = ghostPosition_old;
+                            std::cout << "Ghost Collision detected\n";
+                            std::cout <<  gx.x << ", " << gz.z << ";\n\n";
+                            break;
+                        }
+                    }
+                
+
                 //compute movement
                 oldPos = Pos; //to set again in case of collision with walls
                 
@@ -561,8 +590,9 @@ protected:
                 Pos = Pos + MOVE_SPEED * m.y * uy * deltaT;
                 Pos.y = Pos.y < 0.0f ? 0.0f : Pos.y;
                 Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
-                std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
-                
+                //std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
+                std::cout << ghostPosition.x << ", " << ghostPosition.y << ", " <<  ghostPosition.z << ";\n";
+
                 if(Pos.y == 0){
                     for(auto &coppia : vertex_pairs){
                         if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
@@ -660,6 +690,7 @@ protected:
                 }
                 
                 
+
                 
                 /*
                 gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
@@ -909,6 +940,13 @@ protected:
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         
+                        SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
+                        SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
+                    } else if ((*SC.I[i].id == "ghost")){
+                        glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), ghostPosition);
+                        ubo.mMat = SC.I[i].Wm *translationMatrix* baseTr;
+                        ubo.mvpMat = ViewPrj * ubo.mMat;
+                        ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
