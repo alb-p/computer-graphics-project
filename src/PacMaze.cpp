@@ -624,16 +624,7 @@ protected:
                     if(CheckCollision(Pos, portalPosition, 1)){
                         Pos = glm::vec3(-17.4279, 0, 19.2095);
                     }
-                    if(CheckCollision(Pos, hint1Position,1)){
-                        //queste righe hint che fanno vedere dall'alto
-                        scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
-                        scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
-                        subjScaleFactor = glm::vec3(3.0,3.0,3.0);
-                        cameraPos.y = 100.0f;
-                        glm::vec3 cameraTarget = Pos;
-                        glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
-                        View = glm::lookAt(cameraPos, cameraTarget, upVector);
-                    }
+                    
                     
                     if(CheckCollision(Pos, hint2Position, 1)){
                         //questa riga fa hint che nasconde il labirinto temporaneamente
@@ -656,6 +647,18 @@ protected:
                     ViewPrjOld = ViewPrj;
                 ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
                 ViewPrjOld = ViewPrj;
+                if(CheckCollision(Pos, hint1Position,1)){
+                    //queste righe hint che fanno vedere dall'alto
+                    scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
+                    scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
+                    subjScaleFactor = glm::vec3(3.0,3.0,3.0);
+                    cameraPos.y = 100.0f;
+                    glm::vec3 cameraTarget = Pos;
+                    glm::vec3 upVector = glm::vec3(0.0f, 1.0f, 0.0f);
+                    View = glm::lookAt(cameraPos, cameraTarget, upVector);
+                    ViewPrj = Prj * View;
+                }
+                
                 
                 
                 /*
