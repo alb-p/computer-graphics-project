@@ -110,7 +110,7 @@
             0,1, 0, 0,
             0, 0,1, 0,
             0, 0, 0, 1] },
-        {"id": "pavimento", "model": "geo", "texture": "t1", "transform":
+        {"id": "pavimento", "model": "geo", "texture": "t6", "transform":
             [100, 0, 0, 0,
             0,100, 0, 0,
             0, 0,100, 0,
