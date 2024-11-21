@@ -41,39 +41,59 @@ template<typename ... Args> std::string string_format(const std::string& format,
     return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
 }
 
-struct OverlayUniformBlock {
-    alignas(4) float visible;
-};
 
+
+
+///Vertex
 struct VertexOverlay {
     glm::vec2 pos;
     glm::vec2 UV;
 };
 
+
 struct LightVertex {
+    glm::vec3 pos;
+    glm::vec2 UV;
+};
+
+struct DunVertex {
+    glm::vec3 pos;
+    glm::vec3 norm;
+    glm::vec2 UV;
+    
+};
+
+
+struct Vertex {
     glm::vec3 pos;
     glm::vec3 norm;
     glm::vec2 UV;
     glm::vec4 tan;
+    Vertex(glm::vec3 &pos, glm::vec3 &norm, glm::vec2 &UV, glm::vec4 &tan): pos(pos), norm(norm), UV(UV), tan(tan){};
 };
+
+
+
+
+
+
+///UniformBufferObjects
+struct OverlayUniformBlock {
+    alignas(4) float visible;
+};
+
 
 struct LightUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
-    alignas(16) glm::mat4 mMat;
-    alignas(16) glm::mat4 nMat;
 };
 
-
-struct CollectibleItem {
-    glm::vec3 position;
-    bool isCollected;
-    std::string name;
-    CollectibleItem(glm::vec3 position,bool isCollected, std::string name):position(position),isCollected(isCollected),name(name){};
+#define OBDUN 5
+struct DunUniformBufferObject {
+    alignas(16) glm::mat4 mvpMat[OBDUN];
+    alignas(16) glm::mat4 mMat[OBDUN];
+    alignas(16) glm::mat4 nMat[OBDUN];
 };
-bool CheckCollision(const glm::vec3& playerPos, glm::vec3 itemPos, float radius){
-    float distance = glm::length(playerPos - itemPos);
-    return (distance < radius); // Collision if within radius
-}
+
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
@@ -97,15 +117,23 @@ struct GlobalUniformBufferObject {
     alignas(16) glm::vec4 lightOn;
     alignas(4) bool lightType = 0;
 };
+///
 
 
-struct Vertex {
-    glm::vec3 pos;
-    glm::vec3 norm;
-    glm::vec2 UV;
-    glm::vec4 tan;
-    Vertex(glm::vec3 &pos, glm::vec3 &norm, glm::vec2 &UV, glm::vec4 &tan): pos(pos), norm(norm), UV(UV), tan(tan){};
+
+
+
+struct CollectibleItem {
+    glm::vec3 position;
+    bool isCollected;
+    std::string name;
+    CollectibleItem(glm::vec3 position,bool isCollected, std::string name):position(position),isCollected(isCollected),name(name){};
 };
+bool CheckCollision(const glm::vec3& playerPos, glm::vec3 itemPos, float radius){
+    float distance = glm::length(playerPos - itemPos);
+    return (distance < radius); // Collision if within radius
+}
+
 
 std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& vertices) {
     std::vector<unsigned char> buffer;
@@ -113,8 +141,11 @@ std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& v
     memcpy(buffer.data(), vertices.data(), buffer.size());
     return buffer;
 }
-#include "modules/Scene.hpp"
 
+
+
+
+#include "modules/Scene.hpp"
 #include <glm/glm.hpp>
 #include <iostream>
 #include <limits>
@@ -129,14 +160,23 @@ void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
 protected:
     GameState game_state = notStarted;
-    DescriptorSetLayout DSL, DSLOverlay, DSLLight;
-    VertexDescriptor VD, VOverlay, VDLight;
-    Pipeline P, POverlay, PLight;
+    
+    DescriptorSetLayout DSL, DSLOverlay, DSLLight, DSLDun;
+    
+    VertexDescriptor VD, VOverlay, VDLight, VDDun;
+    
+    Pipeline P, POverlay, PLight, PDun;
+    
     Model MText[3], MHUD[4], MLight, MEnemy;
-    DescriptorSet DSText[3], DSHUD[4], DSLight;
+    
+    DescriptorSet DSText[3], DSHUD[4], DSLight, DSDun;
+    
     Texture TText[3], THUD[4], TLight, TEnemy;
+    
     OverlayUniformBlock uboText[3], uboHUD[4];
+    
     Scene SC;
+    
     glm::vec3 **deltaP;
     float *deltaA;
     float *usePitch;
@@ -212,6 +252,12 @@ protected:
             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
             });
         
+        DSLDun.init(this, {
+            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS},
+            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT},
+            {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS}
+        });
+        
         VD.init(this, {
             {0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX}
         }, {
@@ -237,43 +283,48 @@ protected:
                     {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
                         sizeof(glm::vec3), POSITION},
                     {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
-                        sizeof(glm::vec2), UV},
-                    {0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, norm),
-                        sizeof(glm::vec3), NORMAL},
-                    {0, 3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(LightVertex, tan),
-                           sizeof(glm::vec4), TANGENT}
+                        sizeof(glm::vec2), UV}
                 });
         
-     /*
-        DSLPoint.init(this, {
-            {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS},  // Point lights
-            {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}  // Texture
-        });
-     */
+        
+        VDDun.init(this, {
+                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
+                }, {
+                    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, pos),
+                        sizeof(glm::vec3), POSITION},
+                    {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(DunVertex, UV),
+                        sizeof(glm::vec2), UV},
+                    {0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, norm),
+                        sizeof(glm::vec3), NORMAL}
+                });
+        
         
         
         P.init(this, &VD, "shaders/PhongVert.spv", "shaders/PhongFrag.spv", {&DSL});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
+        
+        
+        PDun.init(this, &VDDun,  "shaders/PhongVert.spv", "shaders/PhongFrag.spv", {&DSLDun});
+        P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
+                              VK_CULL_MODE_NONE, false);
+        
+        
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, true);
         
         
-        //
+        
+        
         PLight.init(this, &VDLight, "shaders/LightVert.spv", "shaders/LightFrag.spv", {&DSLLight});
         PLight.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
             VK_CULL_MODE_NONE, true);
         
         
         MLight.init(this, &VDLight, "models/Sphere.obj", OBJ);
-        MEnemy.init(this, &VDLight, "models/grave.mgcg", MGCG);
-        //
+        MEnemy.init(this, &VDLight, "models/barrel.002_Mesh.4450.mgcg", MGCG);
         
-        /*
-        PPointLight.init(this, &VD, "shaders/PointLightVert.spv", "shaders/PointLightFrag.spv", {&DSLPoint});
-        PPointLight.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL, VK_CULL_MODE_NONE, false);
-        */
         
         //resize whole screens
         std::vector<VertexOverlay> vertexData;
@@ -323,7 +374,7 @@ protected:
         }
         
         TLight.init(this, "textures/2k_sun.jpg");
-        TEnemy.init(this, "textures/grave.png");
+        TEnemy.init(this, "textures/barrel.002_Mesh.4450.png");
         
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
@@ -344,12 +395,17 @@ protected:
         SC.pipelinesAndDescriptorSetsInit(DSL);
         
         PLight.create();
+        PDun.create();
         
         DSLight.init(this, &DSLLight, {
             {0, UNIFORM, sizeof(LightUniformBufferObject), nullptr},
             {1, TEXTURE, 0, &TLight}
             });
         
+        DSDun.init(this, &DSLDun, {
+            {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
+            {1, TEXTURE, 0, &TEnemy}
+        });
         
         for (int i = 0; i < 3; i++){
             DSText[i].init(this, &DSLOverlay, {
@@ -370,13 +426,19 @@ protected:
         P.cleanup();
         POverlay.cleanup();
         PLight.cleanup();
+        PDun.cleanup();
         SC.pipelinesAndDescriptorSetsCleanup();
+        
+        DSLight.cleanup();
+        DSDun.cleanup();
+        
         for (int i = 0; i < 3; i++){
             DSText[i].cleanup();
         }
         for (int i = 0; i < 4; i++){
             DSHUD[i].cleanup();
         }
+        
     }
     void localCleanup() {
         for(int i=0; i < SC.InstanceCount; i++) {
@@ -397,9 +459,18 @@ protected:
         }
         DSLOverlay.cleanup();
         DSLLight.cleanup();
+        DSLDun.cleanup();
+        
+        MLight.cleanup();
+        MEnemy.cleanup();
+        
+        TLight.cleanup();
+        TEnemy.cleanup();
+        
         P.destroy();
         POverlay.destroy();
         PLight.destroy();
+        PDun.destroy();
         SC.localCleanup();
     }
     void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage) {
@@ -429,19 +500,20 @@ protected:
             DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
         }
         
+        
+        
         PLight.bind(commandBuffer);
         MLight.bind(commandBuffer);
-        
         DSLight.bind(commandBuffer, PLight, 0, currentImage);
-        
-        
         vkCmdDrawIndexed(commandBuffer,
                 static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
         
+        
+        PDun.bind(commandBuffer);
         MEnemy.bind(commandBuffer);
-        DSLight.bind(commandBuffer, PLight, 0, currentImage);
+        DSDun.bind(commandBuffer, PLight, 0, currentImage);
         vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MEnemy.indices.size()), 1, 0, 0, 0);
+                static_cast<uint32_t>(MEnemy.indices.size()), 5, 0, 0, 0);
         
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
@@ -924,13 +996,22 @@ protected:
                     
                     LightUniformBufferObject lightUbo{};
                     lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
-                    lightUbo.mMat = glm::mat4(1);
-                    lightUbo.nMat = glm::mat4(1);
+                    //lightUbo.mMat = glm::mat4(1);
+                    //lightUbo.nMat = glm::mat4(1);
                     DSLight.map(currentImage, &lightUbo, sizeof(lightUbo), 0);
                     
                     
+                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
+                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+
+                    DunUniformBufferObject dunUbo{};
+                    for(int i = 0; i < OBDUN; i++) {
+                        dunUbo.mMat[i] = glm::translate(glm::mat4(1), glm::vec3(10.0f*i, 0.0f, 0.0f)) * baseTr;
+                        dunUbo.mvpMat[i] = ViewPrj * dunUbo.mMat[i];
+                        dunUbo.nMat[i] = glm::inverse(glm::transpose(dunUbo.mMat[i]));
+                    }
                     
-                    
+                    DSDun.map(currentImage, &dunUbo, sizeof(dunUbo), 0);
                     
                     
                 }
