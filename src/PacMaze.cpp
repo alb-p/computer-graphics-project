@@ -40,25 +40,28 @@ template<typename ... Args> std::string string_format(const std::string& format,
     std::snprintf(buf.get(), size, format.c_str(), args ...);
     return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
 }
+
 struct OverlayUniformBlock {
     alignas(4) float visible;
 };
+
 struct VertexOverlay {
     glm::vec2 pos;
     glm::vec2 UV;
 };
 
-
-
 struct LightVertex {
     glm::vec3 pos;
+    glm::vec3 norm;
     glm::vec2 UV;
+    glm::vec4 tan;
 };
 
 struct LightUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
+    alignas(16) glm::mat4 mMat;
+    alignas(16) glm::mat4 nMat;
 };
-
 
 
 struct CollectibleItem {
@@ -103,6 +106,7 @@ struct Vertex {
     glm::vec4 tan;
     Vertex(glm::vec3 &pos, glm::vec3 &norm, glm::vec2 &UV, glm::vec4 &tan): pos(pos), norm(norm), UV(UV), tan(tan){};
 };
+
 std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& vertices) {
     std::vector<unsigned char> buffer;
     buffer.resize(vertices.size() * sizeof(VertexOverlay));
@@ -128,9 +132,9 @@ protected:
     DescriptorSetLayout DSL, DSLOverlay, DSLLight;
     VertexDescriptor VD, VOverlay, VDLight;
     Pipeline P, POverlay, PLight;
-    Model MText[3], MHUD[4], MLight;
+    Model MText[3], MHUD[4], MLight, MEnemy;
     DescriptorSet DSText[3], DSHUD[4], DSLight;
-    Texture TText[3], THUD[4], TLight;
+    Texture TText[3], THUD[4], TLight, TEnemy;
     OverlayUniformBlock uboText[3], uboHUD[4];
     Scene SC;
     glm::vec3 **deltaP;
@@ -208,15 +212,6 @@ protected:
             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
             });
         
-        VDLight.init(this, {
-                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
-                }, {
-                  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
-                         sizeof(glm::vec3), POSITION},
-                  {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
-                         sizeof(glm::vec2), UV}
-                });
-        
         VD.init(this, {
             {0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX}
         }, {
@@ -239,10 +234,14 @@ protected:
         VDLight.init(this, {
                   {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
                 }, {
-                  {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
-                         sizeof(glm::vec3), POSITION},
-                  {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
-                         sizeof(glm::vec2), UV}
+                    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
+                        sizeof(glm::vec3), POSITION},
+                    {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
+                        sizeof(glm::vec2), UV},
+                    {0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, norm),
+                        sizeof(glm::vec3), NORMAL},
+                    {0, 3, VK_FORMAT_R32G32B32A32_SFLOAT, offsetof(LightVertex, tan),
+                           sizeof(glm::vec4), TANGENT}
                 });
         
      /*
@@ -268,6 +267,7 @@ protected:
         
         
         MLight.init(this, &VDLight, "models/Sphere.obj", OBJ);
+        MEnemy.init(this, &VDLight, "models/grave.mgcg", MGCG);
         //
         
         /*
@@ -323,6 +323,7 @@ protected:
         }
         
         TLight.init(this, "textures/2k_sun.jpg");
+        TEnemy.init(this, "textures/grave.png");
         
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
@@ -430,10 +431,17 @@ protected:
         
         PLight.bind(commandBuffer);
         MLight.bind(commandBuffer);
+        
         DSLight.bind(commandBuffer, PLight, 0, currentImage);
+        
         
         vkCmdDrawIndexed(commandBuffer,
                 static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
+        
+        MEnemy.bind(commandBuffer);
+        DSLight.bind(commandBuffer, PLight, 0, currentImage);
+        vkCmdDrawIndexed(commandBuffer,
+                static_cast<uint32_t>(MEnemy.indices.size()), 1, 0, 0, 0);
         
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
@@ -916,7 +924,14 @@ protected:
                     
                     LightUniformBufferObject lightUbo{};
                     lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
+                    lightUbo.mMat = glm::mat4(1);
+                    lightUbo.nMat = glm::mat4(1);
                     DSLight.map(currentImage, &lightUbo, sizeof(lightUbo), 0);
+                    
+                    
+                    
+                    
+                    
                     
                 }
                 for (int i = 0; i < 4; i++)
