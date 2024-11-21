@@ -166,7 +166,7 @@ protected:
         glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
         glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
         glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
-        glm::vec3 ghostPosition =  glm::vec3(-12.38, 0.0, -10.0);
+        glm::vec3 ghostPosition =  glm::vec3(-5, 0.0, -10.0);
 
 
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
@@ -562,9 +562,9 @@ protected:
                 // ghost movement
                 ghostPosition_old = ghostPosition;
                 
-                ghostPosition = ghostPosition + MOVE_SPEED * gx * deltaT;
+                ghostPosition = ghostPosition + MOVE_SPEED/1.5f * gx * deltaT;
 
-                ghostPosition  = ghostPosition + MOVE_SPEED* gz * deltaT;
+                ghostPosition  = ghostPosition + MOVE_SPEED/1.5f * gz * deltaT;
                 // std::cout << "\nghost vect";
                 // std::cout <<  gx.x << ", " << gz.z << ";\n";
                 
@@ -631,6 +631,9 @@ protected:
                 }
                 if(CheckCollision(Pos, doorPosition, 1) /*&& score == 3*/){
                     doorAngle = 90.0f;
+                } if (CheckCollision(Pos, ghostPosition, 1)){
+                    gameWon = false;
+                    game_state = ended;
                 }
                                 
                   
