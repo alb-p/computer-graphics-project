@@ -394,10 +394,12 @@ protected:
     void pipelinesAndDescriptorSetsInit() {
         P.create();
         POverlay.create();
-        SC.pipelinesAndDescriptorSetsInit(DSL);
         
         PLight.create();
         PDun.create();
+        
+        SC.pipelinesAndDescriptorSetsInit(DSL);
+        
         
         DSLight.init(this, &DSLLight, {
             {0, UNIFORM, sizeof(LightUniformBufferObject), nullptr},
@@ -478,6 +480,22 @@ protected:
     void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage) {
         P.bind(commandBuffer);
         SC.populateCommandBuffer(commandBuffer, currentImage, P);
+        
+        
+        
+        
+        PLight.bind(commandBuffer);
+        MLight.bind(commandBuffer);
+        DSLight.bind(commandBuffer, PLight, 0, currentImage);
+        vkCmdDrawIndexed(commandBuffer,
+                static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
+        
+        
+        PDun.bind(commandBuffer);
+        MEnemy.bind(commandBuffer);
+        DSDun.bind(commandBuffer, PLight, 0, currentImage);
+        vkCmdDrawIndexed(commandBuffer,
+                static_cast<uint32_t>(MEnemy.indices.size()), 5, 0, 0, 0);
         POverlay.bind(commandBuffer);
         for (int i = 0; i < 3; i++){
             MText[i].bind(commandBuffer);
@@ -501,21 +519,6 @@ protected:
             uboHUD[i].visible = 0.0f;
             DSHUD[i].map(currentImage, &uboHUD[i], sizeof(uboHUD[i]), 0);
         }
-        
-        
-        
-        PLight.bind(commandBuffer);
-        MLight.bind(commandBuffer);
-        DSLight.bind(commandBuffer, PLight, 0, currentImage);
-        vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
-        
-        
-        PDun.bind(commandBuffer);
-        MEnemy.bind(commandBuffer);
-        DSDun.bind(commandBuffer, PLight, 0, currentImage);
-        vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MEnemy.indices.size()), 5, 0, 0, 0);
         
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
