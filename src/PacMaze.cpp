@@ -88,7 +88,7 @@ struct LightUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
 };
 
-#define OBDUN 10
+#define OBDUN 15
 
 
 #include <vector>
@@ -105,8 +105,8 @@ std::vector<glm::vec3> generateRandomPositions(int t, std::vector<glm::vec3> alr
     srand(static_cast<unsigned>(time(0)));
 
     for (int i = 0; i < t; i++) {
-        float x = static_cast<float>(rand() % 100 - 50); // Random x in range [-50, 50]
-        float z = static_cast<float>(rand() % 100 - 50); // Random z in range [-50, 50]
+        float x = static_cast<float>(rand() % 80 - 40); // Random x in range [-45, 45]
+        float z = static_cast<float>(rand() % 80 - 40); // Random z in range [-45, 45]
         float y = 0.0f; // Fixed y
         newPos = glm::vec3(x,y,z);
         
@@ -722,7 +722,7 @@ class CGproj : public BaseProject {
                     for(auto &coppia : vertex_pairs){
                         if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
                             Pos = oldPos;
-                            std::cout << "Collision detected \n\n";
+                            //std::cout << "Collision detected \n\n";
                             break;
                         }
                     }
