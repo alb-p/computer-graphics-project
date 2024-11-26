@@ -122,6 +122,9 @@ std::vector<glm::vec3> generateRandomPositions(int t) {
         if (isValid) {
             positions.push_back(newPos);
         }
+        else{
+            i--;
+        }
     }
     return positions;
 }
