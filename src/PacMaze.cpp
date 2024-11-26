@@ -96,7 +96,7 @@ struct LightUniformBufferObject {
 #include <cstdlib>     // For rand() and srand()
 #include <ctime>       // For seeding rand()
 
-std::vector<glm::vec3> generateRandomPositions(int t) {
+std::vector<glm::vec3> generateRandomPositions(int t, std::vector<glm::vec3> alreadyTakenPositions) {
     std::vector<glm::vec3> positions;
     positions.reserve(t); // Reserve memory for efficiency
     glm::vec3 newPos;
@@ -113,6 +113,12 @@ std::vector<glm::vec3> generateRandomPositions(int t) {
         bool isValid = true;
         for (const auto& pos : positions) {
             if (distance(newPos, pos) < 3.0f) {
+                isValid = false;
+                break;
+            }
+        }
+        for(const auto& pos: alreadyTakenPositions){
+            if(distance(newPos,pos)<5.0f){
                 isValid = false;
                 break;
             }
@@ -202,8 +208,6 @@ void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
     protected:
     
-    std::vector<glm::vec3> treePosition = generateRandomPositions(OBDUN);
-   
     
     GameState game_state = notStarted;
     
@@ -260,7 +264,17 @@ class CGproj : public BaseProject {
     glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
     glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
     glm::vec3 ghostPosition =  glm::vec3(-5, 0.0, -10.0);
+    const glm::vec3 StartingPosition = glm::vec3(-12.38, 0.0, -10.0);
+    std::vector<glm::vec3> alreadyTakenPositions = {
+            item1Position, item2Position, item3Position,
+            trap1Position, trap2Position, trap3Position,
+            trap4Position, trap5Position,
+            portalPosition, hint1Position, hint2Position,
+            doorPosition, ghostPosition, StartingPosition
+        };
     
+    std::vector<glm::vec3> treePosition = generateRandomPositions(OBDUN, alreadyTakenPositions);
+
     
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
     CollectibleItem object2 = CollectibleItem(item2Position,false,"objectToCollect2");
@@ -568,7 +582,6 @@ class CGproj : public BaseProject {
         const float FOVy = glm::radians(45.0f);
         const float nearPlane = 0.1f;
         const float farPlane = 100.f;
-        const glm::vec3 StartingPosition = glm::vec3(-12.38, 0.0, -10.0);
         float camHeight = 0.5f;
         float camDist = 1.5f;
         const float minPitch = glm::radians(-8.75f);
@@ -719,6 +732,12 @@ class CGproj : public BaseProject {
                 }
                 else if(CheckCollision(Pos, doorPosition, 0.5f) && score != 3){
                     Pos = oldPos;
+                }
+                for (auto &tree:treePosition){
+                    if(CheckCollision(Pos,tree,1)){
+                        Pos = oldPos;
+                        break;
+                    }
                 }
                 Yaw = Yaw - ROT_SPEED * deltaT * r.y;
                 Pitch = Pitch + ROT_SPEED * deltaT * r.x;
