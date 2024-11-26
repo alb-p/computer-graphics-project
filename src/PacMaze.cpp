@@ -6,6 +6,7 @@
 #include "modules/edges_output.cpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/string_cast.hpp"
+#include <cstdlib>
 
 
 /**/
@@ -87,7 +88,45 @@ struct LightUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
 };
 
-#define OBDUN 5
+#define OBDUN 10
+
+
+#include <vector>
+#include <glm/glm.hpp> // For glm::vec3
+#include <cstdlib>     // For rand() and srand()
+#include <ctime>       // For seeding rand()
+
+std::vector<glm::vec3> generateRandomPositions(int t) {
+    std::vector<glm::vec3> positions;
+    positions.reserve(t); // Reserve memory for efficiency
+    glm::vec3 newPos;
+
+    // Seed the random number generator
+    srand(static_cast<unsigned>(time(0)));
+
+    for (int i = 0; i < t; i++) {
+        float x = static_cast<float>(rand() % 100 - 50); // Random x in range [-50, 50]
+        float z = static_cast<float>(rand() % 100 - 50); // Random z in range [-50, 50]
+        float y = 0.0f; // Fixed y
+        newPos = glm::vec3(x,y,z);
+        
+        bool isValid = true;
+        for (const auto& pos : positions) {
+            if (distance(newPos, pos) < 3.0f) {
+                isValid = false;
+                break;
+            }
+        }
+        
+        // If valid, add the position to the list
+        if (isValid) {
+            positions.push_back(newPos);
+        }
+    }
+    return positions;
+}
+
+
 struct DunUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
     alignas(16) glm::mat4 mMat;
@@ -158,24 +197,28 @@ const float EPSILON = 1e-6f;
 class CGproj;
 void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
-protected:
+    protected:
+    
+    std::vector<glm::vec3> treePosition = generateRandomPositions(OBDUN);
+   
+    
     GameState game_state = notStarted;
     
-    DescriptorSetLayout DSL, DSLOverlay, DSLLight, DSLDun;
+    DescriptorSetLayout DSL, DSLOverlay, DSLDun;
     
-    VertexDescriptor VD, VOverlay, VDLight, VDDun;
+    VertexDescriptor VD, VOverlay, VDDun;
     
-    Pipeline P, POverlay, PLight, PDun;
+    Pipeline P, POverlay, PScreens, PDun;
     
-    Model MText[3], MHUD[4], MLight, MEnemy[OBDUN], Mprova;
+    Model MText[3], MHUD[4], MEnemy[OBDUN], Mprova;
     
-    DescriptorSet DSText[3], DSHUD[4], DSLight, DSDun[OBDUN];
+    DescriptorSet DSText[3], DSHUD[4], DSDun[OBDUN];
     
-    Texture TText[3], THUD[4], TLight, TEnemy[OBDUN];
+    Texture TText[3], THUD[4], TEnemy[OBDUN];
     
     
     DunUniformBufferObject dunUbo[OBDUN];
-
+    
     OverlayUniformBlock uboText[3], uboHUD[4];
     
     Scene SC;
@@ -195,33 +238,33 @@ protected:
     bool gameStarted = false;
     bool gameWon = false;
     bool lightDirectional = false;
-
+    
     
     std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5", "ghost"};
-        glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
-        glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
-        std::vector<std::string> subject = {"c1"};
-        glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
-        glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
-        glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
-        glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
-        glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
-        glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
-        glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
-        glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
-        glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
-        glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
-        glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
-        glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
-        glm::vec3 ghostPosition =  glm::vec3(-5, 0.0, -10.0);
-
-
+    glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
+    glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
+    std::vector<std::string> subject = {"c1"};
+    glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
+    glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
+    glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
+    glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
+    glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
+    glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
+    glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
+    glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
+    glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
+    glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
+    glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
+    glm::vec3 doorPosition =  glm::vec3(-13.38, 0.0, 38.0);
+    glm::vec3 ghostPosition =  glm::vec3(-5, 0.0, -10.0);
+    
+    
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
     CollectibleItem object2 = CollectibleItem(item2Position,false,"objectToCollect2");
     CollectibleItem object3 = CollectibleItem(item3Position,false,"objectToCollect3");
-        
-   
-
+    
+    
+    
     void setWindowParameters() {
         windowWidth = 1280;
         windowHeight = 720;
@@ -248,14 +291,9 @@ protected:
             {2, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS}
         });
         DSLOverlay.init(this, {
-                {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
-                {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
-            });
-        
-        DSLLight.init(this, {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_VERTEX_BIT},
             {1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT}
-            });
+        });
         
         DSLDun.init(this, {
             {0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS},
@@ -275,33 +313,24 @@ protected:
         });
         VOverlay.init(this, {
             {0, sizeof(VertexOverlay), VK_VERTEX_INPUT_RATE_VERTEX}
-            }, {
-                  {0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, pos),
-                         sizeof(glm::vec2), OTHER},
-                  {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, UV),
-                         sizeof(glm::vec2), UV}
-            });
-        
-        VDLight.init(this, {
-                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
-                }, {
-                    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(LightVertex, pos),
-                        sizeof(glm::vec3), POSITION},
-                    {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(LightVertex, UV),
-                        sizeof(glm::vec2), UV}
-                });
+        }, {
+            {0, 0, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, pos),
+                sizeof(glm::vec2), OTHER},
+            {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, UV),
+                sizeof(glm::vec2), UV}
+        });
         
         
         VDDun.init(this, {
-                  {0, sizeof(LightVertex), VK_VERTEX_INPUT_RATE_VERTEX}
-                }, {
-                    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, pos),
-                        sizeof(glm::vec3), POSITION},
-                    {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(DunVertex, UV),
-                        sizeof(glm::vec2), UV},
-                    {0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, norm),
-                        sizeof(glm::vec3), NORMAL}
-                });
+            {0, sizeof(DunVertex), VK_VERTEX_INPUT_RATE_VERTEX}
+        }, {
+            {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, pos),
+                sizeof(glm::vec3), POSITION},
+            {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(DunVertex, UV),
+                sizeof(glm::vec2), UV},
+            {0, 2, VK_FORMAT_R32G32B32_SFLOAT, offsetof(DunVertex, norm),
+                sizeof(glm::vec3), NORMAL}
+        });
         
         
         
@@ -310,27 +339,24 @@ protected:
                               VK_CULL_MODE_NONE, false);
         
         
-        PDun.init(this, &VDDun,  "shaders/PhongVert.spv", "shaders/PhongFrag.spv", {&DSLDun});
+        PDun.init(this, &VDDun,  "shaders/treeVert.spv", "shaders/PhongFrag.spv", {&DSLDun});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         
         
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
-            VK_CULL_MODE_NONE, true);
+                                     VK_CULL_MODE_NONE, true);
         
         
         
         
-        PLight.init(this, &VDLight, "shaders/LightVert.spv", "shaders/LightFrag.spv", {&DSLLight});
-        PLight.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
-            VK_CULL_MODE_NONE, true);
-        
-        
-        MLight.init(this, &VDLight, "models/Sphere.obj", OBJ);
+        PScreens.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
+        PScreens.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
+                                     VK_CULL_MODE_NONE, true);
         
         for(int i = 0; i<OBDUN; i++){
-            MEnemy[i].init(this, &VDLight, "models/barrel.002_Mesh.4450.mgcg", MGCG);
+            MEnemy[i].init(this, &VDDun, "models/veg20.mgcg", MGCG);
         }
         
         //resize whole screens
@@ -340,7 +366,7 @@ protected:
             float scaleFactorH = 4.0f;
             float translationY = -0.35f;
             float translationX = -0.65f;
-             vertexData = {
+            vertexData = {
                 {{anchor.x + translationX, anchor.y + translationY}, {0.0f, 0.0f}},
                 {{anchor.x + translationX, anchor.y + h * 1.15f*scaleFactorH + translationY}, {0.0f, 1.0f}},
                 {{anchor.x + w * 2*scaleFactorW + translationX, anchor.y + translationY}, {1.0f, 0.0f}},
@@ -380,9 +406,8 @@ protected:
             THUD[i].init(this, string_format("textures/keys%d.png", i ).c_str());
         }
         
-        TLight.init(this, "textures/2k_sun.jpg");
         for ( int i = 0; i<OBDUN; i++){
-            TEnemy[i].init(this, "textures/barrel.002_Mesh.4450.png");
+            TEnemy[i].init(this, "textures/veg20.png");
         }
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
@@ -400,17 +425,13 @@ protected:
     void pipelinesAndDescriptorSetsInit() {
         P.create();
         POverlay.create();
-        
-        PLight.create();
+        PScreens.create();
         PDun.create();
         
         SC.pipelinesAndDescriptorSetsInit(DSL);
         
         
-        DSLight.init(this, &DSLLight, {
-            {0, UNIFORM, sizeof(LightUniformBufferObject), nullptr},
-            {1, TEXTURE, 0, &TLight}
-            });
+        
         for(int i=0; i<OBDUN; i++){
             DSDun[i].init(this, &DSLDun, {
                 {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
@@ -427,20 +448,19 @@ protected:
         for (int i = 0; i < 4; i++)
         {
             DSHUD[i].init(this, &DSLOverlay, {
-                    {0, UNIFORM, sizeof(OverlayUniformBlock), nullptr},
-                    {1, TEXTURE, 0, &THUD[i]}
-                });
+                {0, UNIFORM, sizeof(OverlayUniformBlock), nullptr},
+                {1, TEXTURE, 0, &THUD[i]}
+            });
         }
     }
     void pipelinesAndDescriptorSetsCleanup() {
         // Cleanup pipelines
         P.cleanup();
         POverlay.cleanup();
-        PLight.cleanup();
+        PScreens.cleanup();
         PDun.cleanup();
         SC.pipelinesAndDescriptorSetsCleanup();
         
-        DSLight.cleanup();
         for (int i= 0; i<OBDUN; i++){
             DSDun[i].cleanup();
         }
@@ -470,20 +490,17 @@ protected:
             MHUD[i].cleanup();
         }
         DSLOverlay.cleanup();
-        DSLLight.cleanup();
         DSLDun.cleanup();
         
-        MLight.cleanup();
         for(int i=0 ; i<OBDUN; i++){
             MEnemy[i].cleanup();
             TEnemy[i].cleanup();
-
+            
         }
         
-        TLight.cleanup();
         P.destroy();
         POverlay.destroy();
-        PLight.destroy();
+        PScreens.destroy();
         PDun.destroy();
         SC.localCleanup();
     }
@@ -494,34 +511,30 @@ protected:
         
         
         
-        PLight.bind(commandBuffer);
-        MLight.bind(commandBuffer);
-        DSLight.bind(commandBuffer, PLight, 0, currentImage);
-        vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MLight.indices.size()), 1, 0, 0, 0);
-        
         
         PDun.bind(commandBuffer);
         for( int i = 0; i<OBDUN; i++){
             MEnemy[i].bind(commandBuffer);
-            DSDun[i].bind(commandBuffer, PLight, 0, currentImage);
+            DSDun[i].bind(commandBuffer, PDun, 0, currentImage);
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MEnemy[i].indices.size()), 1, 0, 0, 0);
         }
         POverlay.bind(commandBuffer);
-        for (int i = 0; i < 3; i++){
-            MText[i].bind(commandBuffer);
-            DSText[i].bind(commandBuffer, POverlay, 0, currentImage);
-            vkCmdDrawIndexed(commandBuffer,
-                             static_cast<uint32_t>(MText[i].indices.size()), 1, 0, 0, 0);
-        }
         for (int i = 0; i < 4; i++)
         {
             MHUD[i].bind(commandBuffer);
             DSHUD[i].bind(commandBuffer, POverlay, 0, currentImage);
             vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MHUD[i].indices.size()), 1, 0, 0, 0);
-
+                             static_cast<uint32_t>(MHUD[i].indices.size()), 1, 0, 0, 0);
+            
         }
+        PScreens.bind(commandBuffer);
+        for (int i = 0; i < 3; i++){
+            MText[i].bind(commandBuffer);
+            DSText[i].bind(commandBuffer, PScreens, 0, currentImage);
+            vkCmdDrawIndexed(commandBuffer,
+                             static_cast<uint32_t>(MText[i].indices.size()), 1, 0, 0, 0);
+        }
+        
         for (int i = 0; i < 3; i++){
             uboText[i].visible = 0.0f;
             DSText[i].map(currentImage, &uboText[i], sizeof(uboText[i]),0);
@@ -534,11 +547,13 @@ protected:
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
+   
     
     //ghost vect
     glm::vec3 gx = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 gz = glm::vec3(0.0f, 0.0f, 1.0f);
-
+    
+    
 
 
     void updateUniformBuffer(uint32_t currentImage) {
@@ -667,8 +682,8 @@ protected:
                             gx.x = (float(sin(glfwGetTime()*100)));                            
                             gz.z = (float(cos(glfwGetTime()*100))); 
                             ghostPosition = ghostPosition_old;
-                            std::cout << "Ghost Collision detected\n";
-                            std::cout <<  gx.x << ", " << gz.z << ";\n\n";
+                            //std::cout << "Ghost Collision detected\n";
+                            //std::cout <<  gx.x << ", " << gz.z << ";\n\n";
                             break;
                         }
                     }
@@ -685,7 +700,7 @@ protected:
                 Pos.y = Pos.y < 0.0f ? 0.0f : Pos.y;
                 Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
                 //std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
-                std::cout << ghostPosition.x << ", " << ghostPosition.y << ", " <<  ghostPosition.z << ";\n";
+                //std::cout << ghostPosition.x << ", " << ghostPosition.y << ", " <<  ghostPosition.z << ";\n";
 
                 if(Pos.y == 0){
                     for(auto &coppia : vertex_pairs){
@@ -1007,22 +1022,20 @@ protected:
                     lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
                     //lightUbo.mMat = glm::mat4(1);
                     //lightUbo.nMat = glm::mat4(1);
-                    DSLight.map(currentImage, &lightUbo, sizeof(lightUbo), 0);
                     
-                    
-                    glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
-                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
+                  
 
                     
                     
                     
                 }
                 for ( int i=0 ; i< OBDUN ; i++){
-                        dunUbo[i].mMat = glm::translate(glm::mat4(1), glm::vec3(10.0f*(i+1), 10.0f, 0.0f)) * baseTr;
-                        dunUbo[i].mvpMat = ViewPrj * dunUbo[i].mMat;
-                        dunUbo[i].nMat = glm::inverse(glm::transpose(dunUbo[i].mMat));
-                
                     
+                    glm::vec3 scaleTrees(0.5f, 0.5f, 0.5f);
+                    glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleTrees);
+                    dunUbo[i].mMat = glm::translate(glm::mat4(1), treePosition[i]) * scaleMatrix;
+                    dunUbo[i].mvpMat = ViewPrj * dunUbo[i].mMat;
+                    dunUbo[i].nMat = glm::inverse(glm::transpose(dunUbo[i].mMat));
                     DSDun[i].map(currentImage, &dunUbo[i], sizeof(dunUbo[i]), 0);
                 }
                 for (int i = 0; i < 4; i++)

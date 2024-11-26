@@ -1,0 +1,16 @@
+{
+	"models": [
+        {"id": "treeModel",  "model": "models/veg20.mgcg", "format":"MGCG"}
+	],
+	"textures": [
+        {"id": "treeTexture", "texture": "textures/veg20.png"}
+	],
+	"instances": [
+        {"id": "tree", "model": "treeModel", "texture": "treeTexture", "transform":
+            [1,0,0,0,
+            0,1,0,0,
+            0,0,1,0,
+            0,0,0,1]}
+        
+	]
+}
