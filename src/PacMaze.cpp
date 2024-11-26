@@ -89,9 +89,9 @@ struct LightUniformBufferObject {
 
 #define OBDUN 5
 struct DunUniformBufferObject {
-    alignas(16) glm::mat4 mvpMat[OBDUN];
-    alignas(16) glm::mat4 mMat[OBDUN];
-    alignas(16) glm::mat4 nMat[OBDUN];
+    alignas(16) glm::mat4 mvpMat;
+    alignas(16) glm::mat4 mMat;
+    alignas(16) glm::mat4 nMat;
 };
 
 
@@ -167,12 +167,15 @@ protected:
     
     Pipeline P, POverlay, PLight, PDun;
     
-    Model MText[3], MHUD[4], MLight, MEnemy;
+    Model MText[3], MHUD[4], MLight, MEnemy[OBDUN], Mprova;
     
-    DescriptorSet DSText[3], DSHUD[4], DSLight, DSDun;
+    DescriptorSet DSText[3], DSHUD[4], DSLight, DSDun[OBDUN];
     
-    Texture TText[3], THUD[4], TLight, TEnemy;
+    Texture TText[3], THUD[4], TLight, TEnemy[OBDUN];
     
+    
+    DunUniformBufferObject dunUbo[OBDUN];
+
     OverlayUniformBlock uboText[3], uboHUD[4];
     
     Scene SC;
@@ -225,9 +228,9 @@ protected:
         windowTitle = "PAC-MAZE";
         windowResizable = GLFW_TRUE;
         initialBackgroundColor = {36/255,30/255,43/255, 1.0f};
-        uniformBlocksInPool = 25 * 2 + 2;
-        texturesInPool = 29 + 1;
-        setsInPool = 29 + 1;
+        uniformBlocksInPool = 50 * 2 + 2;
+        texturesInPool = 30 *2 + 1;
+        setsInPool = 49 + 1;
         Ar = 4.0f / 3.0f;
     }
     
@@ -325,8 +328,10 @@ protected:
         
         
         MLight.init(this, &VDLight, "models/Sphere.obj", OBJ);
-        MEnemy.init(this, &VDLight, "models/barrel.002_Mesh.4450.mgcg", MGCG);
         
+        for(int i = 0; i<OBDUN; i++){
+            MEnemy[i].init(this, &VDLight, "models/barrel.002_Mesh.4450.mgcg", MGCG);
+        }
         
         //resize whole screens
         std::vector<VertexOverlay> vertexData;
@@ -376,8 +381,9 @@ protected:
         }
         
         TLight.init(this, "textures/2k_sun.jpg");
-        TEnemy.init(this, "textures/barrel.002_Mesh.4450.png");
-        
+        for ( int i = 0; i<OBDUN; i++){
+            TEnemy[i].init(this, "textures/barrel.002_Mesh.4450.png");
+        }
         Pos = glm::vec3(0.0f,0.0f,0.0f);
         InitialPos = Pos;
         Yaw = 0;
@@ -405,11 +411,12 @@ protected:
             {0, UNIFORM, sizeof(LightUniformBufferObject), nullptr},
             {1, TEXTURE, 0, &TLight}
             });
-        
-        DSDun.init(this, &DSLDun, {
-            {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
-            {1, TEXTURE, 0, &TEnemy}
-        });
+        for(int i=0; i<OBDUN; i++){
+            DSDun[i].init(this, &DSLDun, {
+                {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
+                {1, TEXTURE, 0, &TEnemy[i]}
+            });
+        }
         
         for (int i = 0; i < 3; i++){
             DSText[i].init(this, &DSLOverlay, {
@@ -434,8 +441,9 @@ protected:
         SC.pipelinesAndDescriptorSetsCleanup();
         
         DSLight.cleanup();
-        DSDun.cleanup();
-        
+        for (int i= 0; i<OBDUN; i++){
+            DSDun[i].cleanup();
+        }
         for (int i = 0; i < 3; i++){
             DSText[i].cleanup();
         }
@@ -466,11 +474,13 @@ protected:
         DSLDun.cleanup();
         
         MLight.cleanup();
-        MEnemy.cleanup();
+        for(int i=0 ; i<OBDUN; i++){
+            MEnemy[i].cleanup();
+            TEnemy[i].cleanup();
+
+        }
         
         TLight.cleanup();
-        TEnemy.cleanup();
-        
         P.destroy();
         POverlay.destroy();
         PLight.destroy();
@@ -492,10 +502,11 @@ protected:
         
         
         PDun.bind(commandBuffer);
-        MEnemy.bind(commandBuffer);
-        DSDun.bind(commandBuffer, PLight, 0, currentImage);
-        vkCmdDrawIndexed(commandBuffer,
-                static_cast<uint32_t>(MEnemy.indices.size()), 5, 0, 0, 0);
+        for( int i = 0; i<OBDUN; i++){
+            MEnemy[i].bind(commandBuffer);
+            DSDun[i].bind(commandBuffer, PLight, 0, currentImage);
+            vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(MEnemy[i].indices.size()), 1, 0, 0, 0);
+        }
         POverlay.bind(commandBuffer);
         for (int i = 0; i < 3; i++){
             MText[i].bind(commandBuffer);
@@ -781,61 +792,13 @@ protected:
                 
 
                 
-                /*
-                gubo.lightDir = glm::vec3(cos(glm::radians(135.0f)), sin(glm::radians(135.0f)), 0.0f);
-                gubo.lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-                */
-                
-                
-                //Buffer for point lights
-                /*for (int i=0; i < NUM_POINT_LIGHTS; i++) {
-                    gubo.eyePos = cameraPos;
-                    gubo.pointLightPositions[i] = glm::vec3(1.0 + i*5, 10.5, -5.0 + i*5);
-                    gubo.pointLightColors[i] = glm::vec4(1.0 + i*1, 5.0 + i*1.2, 5.0 + i*1.3, 3.0f + i*1);
-                    gubo.pointLightRadii[i] = 7.0f;
-                }
-                
-                gubo.pointLightPositions[0] = glm::vec3(15.0f, 8.0f, 15.0f);
-                gubo.pointLightColors[0] = glm::vec4(1.0 + 53.8, 5.0, 5.0 + 1.3, 3.0f + 72.2);
-                gubo.pointLightRadii[0] = 12.0f;
-                
-                gubo.pointLightPositions[1] = glm::vec3(0.0f, 5.0f, 0.0f);
-                gubo.pointLightColors[1] = glm::vec4(1.0 + 53.8, 5.0, 5.0 + 1.3, 3.0f + 72.2);
-                gubo.pointLightRadii[1] = 12.0f;
-                */
                 
                 
                 static bool debounce = false;
                 static int curDebounce = 0;
                 
                 gubo.lightType = lightDirectional;
-                /*
-                if(glfwGetKey(window, GLFW_KEY_L)) {
-                    if(!debounce) {
-                        debounce = true;
-                        curDebounce = GLFW_KEY_L;
-                        
-                        gubo.lightType = !gubo.lightType;
-                    }
-                } else {
-                    if((curDebounce == GLFW_KEY_L) && debounce) {
-                        debounce = false;
-                        curDebounce = 0;
-                    }
-                }
-                
-                if (gubo.lightType == 1)
-                    std::cout << "LightType : " << gubo.lightType;
-                */
-                
-                
-                /*
-                for(int i = 0; i <5; i++) {
-                    gubo.lightColor[i] = glm::vec4(1, 0, 0, 2);
-                    gubo.lightDir[i].v = glm::mat4(1) * glm::vec4(0,0,1,0);
-                    gubo.lightPos[i].v = glm::mat4(1) * glm::vec4(0,0,0,1);
-                }
-                */
+             
                 
                 gubo.lightDir[0].v = glm::vec3(1, 1, 1);
                 gubo.lightColor[0] = glm::vec4(1, 1, 1, 0.5);
@@ -860,15 +823,7 @@ protected:
                 
                 gubo.eyePos = cameraPos;
                 gubo.lightOn = glm::vec4(1);
-                
-                /*
-                for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
-                    std::cout << "Light " << i << " Position: " << glm::to_string(gubo.pointLightPositions[i]) << std::endl;
-                    std::cout << "Light " << i << " Color: " << glm::to_string(gubo.pointLightColors[i]) << std::endl;
-                }
-                */
-                
-                
+           
                 // Draw the subject in the scene
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
@@ -1058,16 +1013,17 @@ protected:
                     glm::vec3 scaleToHide(0.0f, 0.0f, 0.0f);
                     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleToHide);
 
-                    DunUniformBufferObject dunUbo{};
-                    for(int i = 0; i < OBDUN; i++) {
-                        dunUbo.mMat[i] = glm::translate(glm::mat4(1), glm::vec3(10.0f*i, 0.0f, 0.0f)) * baseTr;
-                        dunUbo.mvpMat[i] = ViewPrj * dunUbo.mMat[i];
-                        dunUbo.nMat[i] = glm::inverse(glm::transpose(dunUbo.mMat[i]));
-                    }
-                    
-                    DSDun.map(currentImage, &dunUbo, sizeof(dunUbo), 0);
                     
                     
+                    
+                }
+                for ( int i=0 ; i< OBDUN ; i++){
+                        dunUbo[i].mMat = glm::translate(glm::mat4(1), glm::vec3(10.0f*(i+1), 10.0f, 0.0f)) * baseTr;
+                        dunUbo[i].mvpMat = ViewPrj * dunUbo[i].mMat;
+                        dunUbo[i].nMat = glm::inverse(glm::transpose(dunUbo[i].mMat));
+                
+                    
+                    DSDun[i].map(currentImage, &dunUbo[i], sizeof(dunUbo[i]), 0);
                 }
                 for (int i = 0; i < 4; i++)
                 {
