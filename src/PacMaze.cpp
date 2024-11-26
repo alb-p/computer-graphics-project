@@ -662,7 +662,7 @@ protected:
                         }
                     }
                 
-
+                
                 //compute movement
                 oldPos = Pos; //to set again in case of collision with walls
                 
@@ -685,7 +685,12 @@ protected:
                         }
                     }
                 }
-                
+                if(CheckCollision(Pos, doorPosition, 1) && score == 3){
+                    doorAngle = 90.0f;
+                }
+                else if(CheckCollision(Pos, doorPosition, 0.5f) && score != 3){
+                    Pos = oldPos;
+                }
                 Yaw = Yaw - ROT_SPEED * deltaT * r.y;
                 Pitch = Pitch + ROT_SPEED * deltaT * r.x;
                 Pitch  =  Pitch < minPitch ? minPitch :
@@ -712,9 +717,7 @@ protected:
                     object3.isCollected = true;
                     //PlaySoundEffect("collect.wav");
                 }
-                if(CheckCollision(Pos, doorPosition, 1) /*&& score == 3*/){
-                    doorAngle = 90.0f;
-                } if (CheckCollision(Pos, ghostPosition, 1)){
+                if (CheckCollision(Pos, ghostPosition, 1)){
                     gameWon = false;
                     game_state = ended;
                 }
