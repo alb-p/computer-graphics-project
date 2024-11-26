@@ -254,11 +254,11 @@ class CGproj : public BaseProject {
     glm::vec3 item1Position =  glm::vec3(-34.7,0.0,-32.3);
     glm::vec3 item2Position =  glm::vec3(-17.75, 0.0, -0.93);
     glm::vec3 item3Position =  glm::vec3(21.65, 0.0, 33.64);
-    glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);
-    glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052);
-    glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974);
-    glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355);
-    glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741);
+    glm::vec3 trap1Position =  glm::vec3(-28.5,0.0,-16.4655);//V
+    glm::vec3 trap2Position =  glm::vec3(-38.8831,0.0,10.5052); //V
+    glm::vec3 trap3Position =  glm::vec3(-13.0604,0.0, -25.3974); //V
+    glm::vec3 trap4Position =  glm::vec3(10.9513, 0.0, 31.8355); //V
+    glm::vec3 trap5Position =  glm::vec3(24.4103,0.0,-34.1741); //V
     glm::vec3 portalPosition = glm::vec3(30.0, 0.0, -21.54);
     glm::vec3 hint1Position = glm::vec3(-3.83, 0.0, 5.48);
     glm::vec3 hint2Position = glm::vec3(23.675, 0.0,3.19);
@@ -1023,7 +1023,8 @@ class CGproj : public BaseProject {
                         
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                    } else if ((*SC.I[i].id == "ghost")){
+                    }
+                    else if ((*SC.I[i].id == "ghost")){
                         glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), ghostPosition);
                         ubo.mMat = SC.I[i].Wm *translationMatrix* baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
@@ -1044,12 +1045,6 @@ class CGproj : public BaseProject {
                     lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
                     //lightUbo.mMat = glm::mat4(1);
                     //lightUbo.nMat = glm::mat4(1);
-                    
-                  
-
-                    
-                    
-                    
                 }
                 for ( int i=0 ; i< OBDUN ; i++){
                     

@@ -17,7 +17,7 @@
 	],
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
-        {"id": "t6", "texture": "textures/geo.png"},
+        {"id": "t6", "texture": "textures/provapavement.jpg"},
         {"id": "t7", "texture": "textures/Colors2.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
         {"id": "doorTexture", "texture": "textures/Door_BaseColor.jpg"},
@@ -63,29 +63,29 @@
             0, 0, 0, 1]},
         {"id": "grave1", "model": "grave", "texture": "graveTexture", "transform":
             [0.5, 0, 0, -28.5,
-                       0, 0.5, 0, 0.4,
-                       0, 0,0.5, -16.4655,
-                       0, 0, 0, 1]},
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, -16.4655,
+            0, 0, 0, 1]},
         {"id": "grave2", "model": "grave", "texture": "graveTexture", "transform":
-                           [0.5, 0, 0, -38.8831,
-                                      0, 0.5, 0, 0.4,
-                                      0, 0,0.5, 10.5052,
-                                      0, 0, 0, 1]},
+            [0.5, 0, 0, -38.8831,
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, 10.5052,
+            0, 0, 0, 1]},
         {"id": "grave3", "model": "grave", "texture": "graveTexture", "transform":
-                                          [0.5, 0, 0, -13.0604,
-                                                     0, 0.5, 0, 0.4,
-                                                     0, 0,0.5, -25.3984,
-                                                     0, 0, 0, 1]},
+            [0.5, 0, 0, -13.0604,
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, -25.3984,
+            0, 0, 0, 1]},
         {"id": "grave4", "model": "grave", "texture": "graveTexture", "transform":
-                                                         [0.5, 0, 0, 10.9513,
-                                                                    0, 0.5, 0, 0.4,
-                                                                    0, 0,0.5, 31.8355,
-                                                                    0, 0, 0, 1]},
+            [0.5, 0, 0, 10.9513,
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, 31.8355,
+            0, 0, 0, 1]},
         {"id": "grave5", "model": "grave", "texture": "graveTexture", "transform":
-                                                                        [0.5, 0, 0, 24.4105,
-                                                                                   0, 0.5, 0, 0.4,
-                                                                                   0, 0,0.5, -34.1741,
-                                                                                   0, 0, 0, 1]},
+            [0.5, 0, 0, 24.4105,
+            0, 0.5, 0, 0.4,
+            0, 0,0.5, -34.1741,
+            0, 0, 0, 1]},
         {"id": "door", "model": "door", "texture": "doorTexture", "transform":
             [1,0,0,-13,
             0,1,0,0,
@@ -123,7 +123,7 @@
             0, 0, 0, 1]},
         {"id": "ghost", "model": "ghost_model", "texture": "ghostTexture", "transform":
             [1,0,0,0,
-            0,1,0,0,
+            0,1,0,0.02,
             0,0,1,0,
             0,0,0,1]}
         
