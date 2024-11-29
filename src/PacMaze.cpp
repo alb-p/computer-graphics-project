@@ -843,10 +843,10 @@ class CGproj : public BaseProject {
                 
                 
                 
-                gubo.lightColor[1] = glm::vec4(0, 1, 0, 0.5);
-                gubo.lightColor[2] = glm::vec4(0, 0, 1, 0.3);
-                gubo.lightColor[3] = glm::vec4(1, 1, 1, 0.5);
-                gubo.lightColor[4] = glm::vec4(1, 0, 0, 0.7);
+                gubo.lightColor[1] = glm::vec4(0, 1, 0, 9.5);
+                gubo.lightColor[2] = glm::vec4(0, 0, 1, 7.3);
+                gubo.lightColor[3] = glm::vec4(0, 1, 1, 5.5);
+                gubo.lightColor[4] = glm::vec4(1, 0, 1, 10.7);
                 
                 
                 gubo.lightPos[1].v = glm::vec3(10.0f, 8.0f, 15.0f);
@@ -866,7 +866,7 @@ class CGproj : public BaseProject {
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
                                         
-                    ubo.mMat = WM * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
+                    ubo.mMat = WM * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     

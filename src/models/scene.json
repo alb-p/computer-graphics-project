@@ -9,7 +9,7 @@
         {"id": "portalLava", "model": "models/portale.gltf", "format":"GLTF"},
         {"id": "portalLight", "model": "models/icosphere.gltf", "format":"GLTF"},
         {"id": "hint", "model": "models/hint.gltf", "format":"GLTF"},
-        {"id": "character", "model" : "models/Character.obj", "format":"OBJ"},
+        {"id": "character", "model" : "models/Pacman.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
         {"id": "mazeX", "model": "models/mazegenerated.gltf", "format":"GLTF"},
@@ -18,7 +18,7 @@
 	"textures": [
 		{"id": "t1", "texture": "textures/textures.png"},
         {"id": "t6", "texture": "textures/provapavement.jpg"},
-        {"id": "t7", "texture": "textures/Colors2.png"},
+        {"id": "t7", "texture": "textures/Pac.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
         {"id": "doorTexture", "texture": "textures/Door_BaseColor.jpg"},
         {"id": "graveTexture", "texture": "textures/grave.png"},
