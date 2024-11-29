@@ -356,7 +356,7 @@ class CGproj : public BaseProject {
                               VK_CULL_MODE_NONE, false);
         
         
-        PDun.init(this, &VDDun,  "shaders/treeVert.spv", "shaders/PhongFrag.spv", {&DSLDun});
+        PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/TreeFrag.spv", {&DSLDun});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         
@@ -452,7 +452,8 @@ class CGproj : public BaseProject {
         for(int i=0; i<OBDUN; i++){
             DSDun[i].init(this, &DSLDun, {
                 {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
-                {1, TEXTURE, 0, &TEnemy[i]}
+                {1, TEXTURE, 0, &TEnemy[i]},
+                {2, UNIFORM, sizeof(GlobalUniformBufferObject), nullptr}
             });
         }
         
@@ -1054,6 +1055,7 @@ class CGproj : public BaseProject {
                     dunUbo[i].mvpMat = ViewPrj * dunUbo[i].mMat;
                     dunUbo[i].nMat = glm::inverse(glm::transpose(dunUbo[i].mMat));
                     DSDun[i].map(currentImage, &dunUbo[i], sizeof(dunUbo[i]), 0);
+                    DSDun[i].map(currentImage, &gubo, sizeof(gubo), 2);
                 }
                 for (int i = 0; i < 4; i++)
                 {
