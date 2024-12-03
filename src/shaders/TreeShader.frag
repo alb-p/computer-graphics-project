@@ -75,16 +75,45 @@ void main() {
     float levels = 3.0; // Number of shading levels
     
     
+    vec3 ambientLight = vec3(0.15, 0.15, 0.15); // Weak ambient light
+    RendEqSol += Albedo * ambientLight;
+    
+    vec3 specular = vec3(0.0); // Initialize specular contributio
     
     if (gubo.lightType == 0) {
         vec3 LD = normalize(gubo.lightDir[0]);
         vec3 LC = normalize(gubo.lightColor[0].rgb);
         float intensity = max(dot(N, LD), 0.0);
         intensity = floor(intensity * levels) / levels;
+        
+        // Specular reflection
+        vec3 reflectedLight = reflect(-LD, N);
+        float specFactor = pow(max(dot(reflectedLight, EyeDir), 0.0), 16.0); // Shininess of 32
+        specular += gubo.lightColor[0].rgb * specFactor * 0.05; // Reduce glossiness
+        
         RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity  * gubo.lightOn.y;
+        
     }
     
     else {
+        for(int i=0; i < 5; i++) {
+            LD = point_light_dir(fragPos, i);
+            LC = point_light_color(fragPos, i);
+            float intensity = max(dot(N, LD), 0.0);
+            intensity = floor(intensity * levels) / levels;
+            
+            // Specular reflection for point light
+            vec3 reflectedLight = reflect(-LD, N);
+            float specFactor = pow(max(dot(reflectedLight, EyeDir), 0.0), 16.0); // Shininess of 32
+            
+            specular += LC * specFactor * 0.05; // Reduce glossiness
+
+            
+            RendEqSol += Albedo * LC * intensity  * gubo.lightOn.x;
+        }
+    }
+    
+    /*else {
         // Second light
         LD = point_light_dir(fragPos, 1);
         LC = point_light_color(fragPos, 1);
@@ -112,17 +141,24 @@ void main() {
         intensity = max(dot(N, LD), 0.0);
         intensity = floor(intensity * levels) / levels;
         RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity      * gubo.lightOn.x;
-    }
+    }*/
     
-    // Dot product for lighting
-    //float intensity = max(dot(N, LD), 0.0);
-    //Specular = vec3(pow(max(dot(EyeDir, -reflect(LD, Norm)),0.0f), 160.0f));
+    // Add specular highlights
+    RendEqSol += specular;
     
-    // Quantize intensity into discrete steps
     
-    //intensity = floor(intensity * levels) / levels;
+    /*
+    // Optional: Rim lighting (focused on edges, not the entire tree)
+    float rim = 1.0 - max(dot(N, EyeDir), 0.0);
+    rim = pow(rim, 3.0); // Sharpen the rim effect
 
-    // Calculate final color
-    //vec3 color = Albedo * gubo.lightColor[0].rgb * intensity;
+    // Attenuate rim lighting based on light intensity
+    float lightIntensity = max(dot(N, LD), 0.0); // Light contribution at the fragment
+    rim *= 1.0 - lightIntensity; // Reduce rim where light is strong
+
+    vec3 rimColor = vec3(0.2, 0.25, 0.2); // Subtle green-brown rim color
+    RendEqSol += rimColor * rim * 0.3; // Subtle rim lighting
+*/
+    
     outColor = vec4(RendEqSol, 1.0);
 }
