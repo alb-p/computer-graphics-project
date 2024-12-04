@@ -96,6 +96,11 @@ struct LightUniformBufferObject {
 #include <cstdlib>     // For rand() and srand()
 #include <ctime>       // For seeding rand()
 
+ // -1 per door not opened
+static float doorOpenTime = -1.0f;
+const float doorOpenDuration = 3.0f;
+
+
 std::vector<glm::vec3> generateRandomPositions(int t, std::vector<glm::vec3> alreadyTakenPositions) {
     std::vector<glm::vec3> positions;
     positions.reserve(t); // Reserve memory for efficiency
@@ -245,6 +250,7 @@ class CGproj : public BaseProject {
     bool gameStarted = false;
     bool gameWon = false;
     bool lightDirectional = false;
+
     
     
     std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5", "ghost"};
@@ -678,12 +684,12 @@ class CGproj : public BaseProject {
                     score++;
                 }
                 
-                /*
-                if(score == 3){
-                gameWon = true;
-                game_state = ended;
-                break;
-                }*/
+                
+                // if(score == 3){
+                // gameWon = true;
+                // game_state = ended;
+                // break;
+                // }
                 
                 // ghost movement
                 ghostPosition_old = ghostPosition;
@@ -728,11 +734,23 @@ class CGproj : public BaseProject {
                         }
                     }
                 }
-                if(CheckCollision(Pos, doorPosition, 1) && score == 3){
-                    doorAngle = 90.0f;
-                }
-                else if(CheckCollision(Pos, doorPosition, 0.5f) && score != 3){
+                if (CheckCollision(Pos, doorPosition, 1) && score == 3) {
+                    if (doorOpenTime < 0.0f) {
+                        doorAngle = 90.0f;
+                        // time when the door opens
+                        doorOpenTime = glfwGetTime();
+                    }
+                } else if (CheckCollision(Pos, doorPosition, 0.75f) && score != 3) {
                     Pos = oldPos;
+                }
+
+                // Door is in an opened state
+                if (doorOpenTime > 0.0f) { 
+                    if (glfwGetTime() - doorOpenTime >= doorOpenDuration) {
+                        gameWon = true;
+                        game_state = ended;
+                        doorOpenTime = -1.0f;
+                    }
                 }
                 for (auto &tree:treePosition){
                     if(CheckCollision(Pos,tree,1)){
