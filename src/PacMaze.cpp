@@ -750,6 +750,7 @@ class CGproj : public BaseProject {
                         gameWon = true;
                         game_state = ended;
                         doorOpenTime = -1.0f;
+                        doorAngle = 0.0f;
                     }
                 }
                 for (auto &tree:treePosition){
