@@ -9,7 +9,7 @@
         {"id": "portalLava", "model": "models/portale.gltf", "format":"GLTF"},
         {"id": "portalLight", "model": "models/icosphere.gltf", "format":"GLTF"},
         {"id": "hint", "model": "models/hint.gltf", "format":"GLTF"},
-        {"id": "character", "model" : "models/Pacman.obj", "format":"OBJ"},
+        {"id": "character", "model" : "models/Sphere.obj", "format":"OBJ"},
         {"id": "sky",  "model": "models/SkyBoxCube.obj", "format": "OBJ"},
         {"id": "key",  "model": "models/Key.mgcg", "format":"MGCG"},
         {"id": "mazeX", "model": "models/mazegenerated.gltf", "format":"GLTF"},

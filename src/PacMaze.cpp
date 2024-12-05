@@ -754,7 +754,7 @@ class CGproj : public BaseProject {
                     }
                 }
                 for (auto &tree:treePosition){
-                    if(CheckCollision(Pos,tree,1)){
+                    if(CheckCollision(Pos,tree,0.5)){
                         Pos = oldPos;
                         break;
                     }
@@ -885,7 +885,7 @@ class CGproj : public BaseProject {
                 for (std::vector<std::string>::iterator it = subject.begin(); it != subject.end(); it++) {
                     int i = SC.InstanceIds[it->c_str()];
                                         
-                    ubo.mMat = WM * glm::scale(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.5f)) * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
+                    ubo.mMat = WM * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f, 0.25f, 0.25f)) * glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0,1,0));
                     ubo.mvpMat = ViewPrj * ubo.mMat;
                     ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                     
