@@ -16,9 +16,8 @@
         {"id": "ghost_model", "model": "models/ghost_m.mgcg", "format":"MGCG"}
 	],
 	"textures": [
-		{"id": "t1", "texture": "textures/textures.png"},
-        {"id": "t6", "texture": "textures/provapavement.jpg"},
-        {"id": "t7", "texture": "textures/Pac.png"},
+        {"id": "pavTexture", "texture": "textures/pavement.jpg"},
+        {"id": "pacTexture", "texture": "textures/Pac.png"},
         {"id": "keysTexture", "texture": "textures/Key_Albedo.png"},
         {"id": "doorTexture", "texture": "textures/Door_BaseColor.jpg"},
         {"id": "graveTexture", "texture": "textures/grave.png"},
@@ -27,7 +26,7 @@
         {"id": "portalLightTexture", "texture": "textures/Lava_05_emissive-2K.jpg"},
         {"id": "mazeTexture", "texture": "textures/walls.jpeg"},
         {"id": "hintTexture", "texture": "textures/default_baseColor.png"},
-        {"id": "skyT", "texture": "textures/provaText.hdr"},
+        {"id": "skyTexture", "texture": "textures/provaText.hdr"},
         {"id": "ghostTexture", "texture": "textures/ghost_t2.jpg"}
 	],
 	"instances": [
@@ -106,17 +105,17 @@
             0,0.01, 0, 0.5,
             0, 0,0.01, 33.64,
             0, 0, 0, 1]},
-        {"id": "c1", "model": "character", "texture": "t7",  "transform":
+        {"id": "c1", "model": "character", "texture": "pacTexture",  "transform":
             [1, 0, 0, 0,
             0,1, 0, 0,
             0, 0,1, 0,
             0, 0, 0, 1] },
-        {"id": "pavimento", "model": "geo", "texture": "t6", "transform":
+        {"id": "pavimento", "model": "geo", "texture": "pavTexture", "transform":
             [100, 0, 0, 0,
             0,100, 0, 0,
             0, 0,100, 0,
             0, 0, 0, 1]},
-        {"id": "sky", "model": "dome", "texture": "skyT", "transform":
+        {"id": "sky", "model": "dome", "texture": "skyTexture", "transform":
             [55, 0, 0, 0,
             0, 55, 0,0,
             0, 0, 55, 0,
