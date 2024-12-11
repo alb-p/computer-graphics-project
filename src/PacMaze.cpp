@@ -9,30 +9,25 @@
 #include <cstdlib>
 
 
-/**/
 bool doSegmentsIntersect(glm::vec3 P1, glm::vec3 P2, glm::vec3 Q1, glm::vec3 Q2) {
     glm::vec3 r = P2 - P1;
     glm::vec3 s = Q2 - Q1;
-
     float rxs = r.x * s.z - r.z * s.x;
     glm::vec3 PQ = Q1 - P1;
     float PQxr = PQ.x * r.z - PQ.z * r.x;
     float PQxs = PQ.x * s.z - PQ.z * s.x;
-
-    // Parallel or collinear
     if (rxs == 0) return false;
-
     float t = PQxs / rxs;
     float u = PQxr / rxs;
-
     return (0 <= t && t <= 1 && 0 <= u && u <= 1);
-}
+} //Method used to check collisions with walls
 
 enum GameState {
     notStarted,
     playing,
     ended
 };
+
 template<typename ... Args> std::string string_format(const std::string& format, Args ... args){
     int size_s = std::snprintf(nullptr, 0, format.c_str(), args ...) + 1; // Extra space for '\0'
     if (size_s <= 0) { throw std::runtime_error("Error during formatting."); }
@@ -42,15 +37,10 @@ template<typename ... Args> std::string string_format(const std::string& format,
     return std::string(buf.get(), buf.get() + size - 1); // We don't want the '\0' inside
 }
 
-
-
-
-///Vertex
 struct VertexOverlay {
     glm::vec2 pos;
     glm::vec2 UV;
 };
-
 
 struct LightVertex {
     glm::vec3 pos;
@@ -64,7 +54,6 @@ struct DunVertex {
     
 };
 
-
 struct Vertex {
     glm::vec3 pos;
     glm::vec3 norm;
@@ -73,42 +62,31 @@ struct Vertex {
     Vertex(glm::vec3 &pos, glm::vec3 &norm, glm::vec2 &UV, glm::vec4 &tan): pos(pos), norm(norm), UV(UV), tan(tan){};
 };
 
-
-
-
-
-
-///UniformBufferObjects
 struct OverlayUniformBlock {
     alignas(4) float visible;
 };
-
 
 struct LightUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
 };
 
-#define OBDUN 15
-
+#define OBDUN 15 //Number of trees
 
 #include <vector>
 #include <glm/glm.hpp> // For glm::vec3
 #include <cstdlib>     // For rand() and srand()
 #include <ctime>       // For seeding rand()
 
- // -1 per door not opened
+// -1 when door not opened
 static float doorOpenTime = -1.0f;
 const float doorOpenDuration = 3.0f;
-
 
 std::vector<glm::vec3> generateRandomPositions(int t, std::vector<glm::vec3> alreadyTakenPositions) {
     std::vector<glm::vec3> positions;
     positions.reserve(t); // Reserve memory for efficiency
     glm::vec3 newPos;
-
     // Seed the random number generator
     srand(static_cast<unsigned>(time(0)));
-
     for (int i = 0; i < t; i++) {
         float x = static_cast<float>(rand() % 80 - 40); // Random x in range [-45, 45]
         float z = static_cast<float>(rand() % 80 - 40); // Random z in range [-45, 45]
@@ -138,8 +116,7 @@ std::vector<glm::vec3> generateRandomPositions(int t, std::vector<glm::vec3> alr
         }
     }
     return positions;
-}
-
+} //Randomly generates the position vectors for scene objects
 
 struct DunUniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
@@ -147,13 +124,11 @@ struct DunUniformBufferObject {
     alignas(16) glm::mat4 nMat;
 };
 
-
 struct UniformBufferObject {
     alignas(16) glm::mat4 mvpMat;
     alignas(16) glm::mat4 mMat;
     alignas(16) glm::mat4 nMat;
 };
-
 
 struct GlobalUniformBufferObject {
     struct {
@@ -170,33 +145,25 @@ struct GlobalUniformBufferObject {
     alignas(16) glm::vec4 lightOn;
     alignas(4) bool lightType = 0;
 };
-///
-
-
-
-
 
 struct CollectibleItem {
     glm::vec3 position;
     bool isCollected;
     std::string name;
     CollectibleItem(glm::vec3 position,bool isCollected, std::string name):position(position),isCollected(isCollected),name(name){};
-};
+}; //Hints and Traps struct
+
 bool CheckCollision(const glm::vec3& playerPos, glm::vec3 itemPos, float radius){
     float distance = glm::length(playerPos - itemPos);
     return (distance < radius); // Collision if within radius
-}
-
+}//Method to identify collision with hints and traps
 
 std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& vertices) {
     std::vector<unsigned char> buffer;
     buffer.resize(vertices.size() * sizeof(VertexOverlay));
     memcpy(buffer.data(), vertices.data(), buffer.size());
     return buffer;
-}
-
-
-
+}//To standardize overlay vertices
 
 #include "modules/Scene.hpp"
 #include <glm/glm.hpp>
@@ -206,35 +173,20 @@ std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& v
 // Epsilon for floating-point comparisons
 const float EPSILON = 1e-6f;
 
-
-
 class CGproj;
 void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
     protected:
-    
-    
     GameState game_state = notStarted;
-    
     DescriptorSetLayout DSL, DSLOverlay, DSLDun;
-    
     VertexDescriptor VD, VOverlay, VDDun;
-    
     Pipeline P, POverlay, PScreens, PDun;
-    
     Model MText[3], MHUD[4], MEnemy[OBDUN], Mprova;
-    
     DescriptorSet DSText[3], DSHUD[4], DSDun[OBDUN];
-    
     Texture TText[3], THUD[4], TEnemy[OBDUN];
-    
-    
     DunUniformBufferObject dunUbo[OBDUN];
-    
     OverlayUniformBlock uboText[3], uboHUD[4];
-    
     Scene SC;
-    
     glm::vec3 **deltaP;
     float *deltaA;
     float *usePitch;
@@ -251,9 +203,7 @@ class CGproj : public BaseProject {
     bool gameWon = false;
     bool lightDirectional = false;
 
-    
-    
-    std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5", "ghost"};
+    std::vector<std::string> landscape =  {"pavimento","hint1","hint2", "maze", "sky", "portal1","portal2","portal3", "door", "grave1", "grave2","grave3","grave4","grave5", "ghost"}; //list of things to render from scene.json
     glm::vec3 scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
     glm::vec3 scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
     std::vector<std::string> subject = {"c1"};
@@ -280,13 +230,10 @@ class CGproj : public BaseProject {
         };
     
     std::vector<glm::vec3> treePosition = generateRandomPositions(OBDUN, alreadyTakenPositions);
-
     
     CollectibleItem object1 = CollectibleItem(item1Position,false,"objectToCollect");
     CollectibleItem object2 = CollectibleItem(item2Position,false,"objectToCollect2");
     CollectibleItem object3 = CollectibleItem(item3Position,false,"objectToCollect3");
-    
-    
     
     void setWindowParameters() {
         windowWidth = 1280;
@@ -342,8 +289,6 @@ class CGproj : public BaseProject {
             {0, 1, VK_FORMAT_R32G32_SFLOAT, offsetof(VertexOverlay, UV),
                 sizeof(glm::vec2), UV}
         });
-        
-        
         VDDun.init(this, {
             {0, sizeof(DunVertex), VK_VERTEX_INPUT_RATE_VERTEX}
         }, {
@@ -355,24 +300,17 @@ class CGproj : public BaseProject {
                 sizeof(glm::vec3), NORMAL}
         });
         
-        
-        
         P.init(this, &VD, "shaders/PhongVert.spv", "shaders/PhongFrag.spv", {&DSL});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
-        
         
         PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/TreeFrag.spv", {&DSLDun});
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         
-        
         POverlay.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         POverlay.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                                      VK_CULL_MODE_NONE, true);
-        
-        
-        
         
         PScreens.init(this, &VOverlay, "shaders/OverlayVert.spv", "shaders/OverlayFrag.spv", { &DSLOverlay });
         PScreens.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
@@ -450,11 +388,8 @@ class CGproj : public BaseProject {
         POverlay.create();
         PScreens.create();
         PDun.create();
-        
         SC.pipelinesAndDescriptorSetsInit(DSL);
-        
-        
-        
+    
         for(int i=0; i<OBDUN; i++){
             DSDun[i].init(this, &DSLDun, {
                 {0, UNIFORM, sizeof(DunUniformBufferObject), nullptr},
@@ -469,6 +404,7 @@ class CGproj : public BaseProject {
                 {1, TEXTURE, 0, &TText[i]}
             });
         }
+        
         for (int i = 0; i < 4; i++)
         {
             DSHUD[i].init(this, &DSLOverlay, {
@@ -477,6 +413,7 @@ class CGproj : public BaseProject {
             });
         }
     }
+    
     void pipelinesAndDescriptorSetsCleanup() {
         // Cleanup pipelines
         P.cleanup();
@@ -488,9 +425,11 @@ class CGproj : public BaseProject {
         for (int i= 0; i<OBDUN; i++){
             DSDun[i].cleanup();
         }
+    
         for (int i = 0; i < 3; i++){
             DSText[i].cleanup();
         }
+        
         for (int i = 0; i < 4; i++){
             DSHUD[i].cleanup();
         }
@@ -504,10 +443,12 @@ class CGproj : public BaseProject {
         free(deltaA);
         free(usePitch);
         DSL.cleanup();
+        
         for (int i = 0; i < 3;i++){
             TText[i].cleanup();
             MText[i].cleanup();
         }
+        
         for (int i = 0; i < 4; i++)
         {
             THUD[i].cleanup();
@@ -531,11 +472,6 @@ class CGproj : public BaseProject {
     void populateCommandBuffer(VkCommandBuffer commandBuffer, int currentImage) {
         P.bind(commandBuffer);
         SC.populateCommandBuffer(commandBuffer, currentImage, P);
-        
-        
-        
-        
-        
         PDun.bind(commandBuffer);
         for( int i = 0; i<OBDUN; i++){
             MEnemy[i].bind(commandBuffer);
@@ -571,15 +507,11 @@ class CGproj : public BaseProject {
     }
     glm::vec3 posToCheck = glm::vec3(Pos.x, Pos.y, Pos.z);
     std::vector<CollectibleItem> collectibleItems = {object1, object2, object3};
-   
-    
-    //ghost vect
+
+    //Ghost trajectory vector
     glm::vec3 gx = glm::vec3(1.0f, 0.0f, 0.0f);
     glm::vec3 gz = glm::vec3(0.0f, 0.0f, 1.0f);
     
-    
-
-
     void updateUniformBuffer(uint32_t currentImage) {
         if(glfwGetKey(window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window, GL_TRUE);
@@ -599,16 +531,14 @@ class CGproj : public BaseProject {
         glm::vec3 m = glm::vec3(0.0f), r = glm::vec3(0.0f);
         bool fire = false;
         bool start = false;
-        
         bool hideMaze = false;
         bool changeLight = false;
         bool mazeVisible = true;
         glm::vec3 subjScaleFactor = glm::vec3(1.0,1.0,1.0);
         scaleFactorSkyToHide = glm::vec3(1.0,1.0,1.0);
         scaleFactorFloorToHide = glm::vec3(1.0,1.0,1.0);
-    
         getSixAxis(deltaT, m, r, fire, start, hideMaze, changeLight);
-        
+
         static glm::vec3 Pos = StartingPosition;
         glm::mat4 ViewPrjOld = glm::mat4(1);
         static float Yaw = glm::radians(0.0f);
@@ -684,29 +614,17 @@ class CGproj : public BaseProject {
                     score++;
                 }
                 
-                
-                // if(score == 3){
-                // gameWon = true;
-                // game_state = ended;
-                // break;
-                // }
-                
-                // ghost movement
                 ghostPosition_old = ghostPosition;
                 
                 ghostPosition = ghostPosition + MOVE_SPEED/1.5f * gx * deltaT;
 
                 ghostPosition  = ghostPosition + MOVE_SPEED/1.5f * gz * deltaT;
-                // std::cout << "\nghost vect";
-                // std::cout <<  gx.x << ", " << gz.z << ";\n";
                 
                 for(auto &coppia : vertex_pairs){
                         if(doSegmentsIntersect(ghostPosition, ghostPosition_old, coppia.second, coppia.first)){
                             gx.x = (float(sin(glfwGetTime()*100)));                            
                             gz.z = (float(cos(glfwGetTime()*100))); 
                             ghostPosition = ghostPosition_old;
-                            //std::cout << "Ghost Collision detected\n";
-                            //std::cout <<  gx.x << ", " << gz.z << ";\n\n";
                             break;
                         }
                     }
@@ -722,14 +640,11 @@ class CGproj : public BaseProject {
                 Pos = Pos + MOVE_SPEED * m.y * uy * deltaT;
                 Pos.y = Pos.y < 0.0f ? 0.0f : Pos.y;
                 Pos = Pos + MOVE_SPEED * m.z * uz * deltaT;
-                //std::cout << Pos.x << ", " << Pos.y << ", " <<  Pos.z << ";\n";
-                //std::cout << ghostPosition.x << ", " << ghostPosition.y << ", " <<  ghostPosition.z << ";\n";
-
+                
                 if(Pos.y == 0){
                     for(auto &coppia : vertex_pairs){
                         if(doSegmentsIntersect(Pos, oldPos, coppia.second, coppia.first)){
                             Pos = oldPos;
-                            //std::cout << "Collision detected \n\n";
                             break;
                         }
                     }
@@ -775,27 +690,21 @@ class CGproj : public BaseProject {
         
                 if (!object1.isCollected && CheckCollision(Pos, item1Position, 2)) {
                     object1.isCollected = true;
-                    //PlaySoundEffect("collect.wav");
                 }
                 if (!object2.isCollected && CheckCollision(Pos, item2Position, 2)) {
                     object2.isCollected = true;
-                    //PlaySoundEffect("collect.wav");
                 }
                 if (!object3.isCollected && CheckCollision(Pos, item3Position, 2)) {
                     object3.isCollected = true;
-                    //PlaySoundEffect("collect.wav");
                 }
                 if (CheckCollision(Pos, ghostPosition, 1)){
                     gameWon = false;
                     game_state = ended;
                 }
                                 
-                  
-                                
                 for(auto &coppia : vertex_pairs){
                     if(doSegmentsIntersect(Pos, cameraPos, coppia.second, coppia.first)){
                         camDist = 0.01f;
-                        //camHeight = camHeight/2;
                         subjScaleFactor = glm::vec3(0.0f,0.0f,0.0f);
                         target = Pos + glm::vec3(0.0f, camHeight, 0.0f);
                         cameraPos = WM * glm::vec4(0.0f, camHeight + (camDist * sin(Pitch)), (camDist * cos(Pitch)), 1.0);
@@ -805,21 +714,18 @@ class CGproj : public BaseProject {
                 }
                                 
                     View = glm::rotate(glm::mat4(1.0f), -Roll, glm::vec3(0,0,1)) * glm::lookAt(cameraPos, target, glm::vec3(0,1,0));
-                    
-                   
-                    
+
                     if(CheckCollision(Pos, portalPosition, 1)){
                         Pos = glm::vec3(-17.4279, 0, 19.2095);
                     }
                     
-                    
                     if(CheckCollision(Pos, hint2Position, 1)){
-                        //questa riga fa hint che nasconde il labirinto temporaneamente
+                        //Hide maze while on the hint
                         mazeVisible = false;
                     }
                     
                     if(CheckCollision(Pos, trap1Position, 1) ||CheckCollision(Pos, trap2Position, 1) ||CheckCollision(Pos, trap3Position, 1) ||CheckCollision(Pos, trap4Position, 1) || CheckCollision(Pos, trap5Position, 1)){
-                        //queste due righe per fare perdere - quindi trappola vera
+                        //Traps
                         gameWon = false;
                         game_state = ended;
                     }
@@ -835,7 +741,7 @@ class CGproj : public BaseProject {
                 ViewPrj = ViewPrjOld * exp(-lambda * deltaT) + ViewPrj * (1 - exp(-lambda * deltaT));
                 ViewPrjOld = ViewPrj;
                 if(CheckCollision(Pos, hint1Position,1)){
-                    //queste righe hint che fanno vedere dall'alto
+                    //Look from above hint
                     scaleFactorSkyToHide = glm::vec3(0.0,0.0,0.0);
                     scaleFactorFloorToHide = glm::vec3(0.0,0.0,0.0);
                     subjScaleFactor = glm::vec3(3.0,3.0,3.0);
@@ -846,33 +752,22 @@ class CGproj : public BaseProject {
                     ViewPrj = Prj * View;
                 }
                 
-                
-
-                
-                
-                
                 static bool debounce = false;
                 static int curDebounce = 0;
                 
                 gubo.lightType = lightDirectional;
-             
                 
                 gubo.lightDir[0].v = glm::vec3(1, 1, 1);
                 gubo.lightColor[0] = glm::vec4(1, 1, 1, 0.5);
-                
-                
-                
                 gubo.lightColor[1] = glm::vec4(0, 1, 0, 9.5);
                 gubo.lightColor[2] = glm::vec4(0, 0, 1, 7.3);
                 gubo.lightColor[3] = glm::vec4(0, 1, 1, 5.5);
                 gubo.lightColor[4] = glm::vec4(1, 0, 1, 10.7);
                 
-                
                 gubo.lightPos[1].v = glm::vec3(10.0f, 8.0f, 15.0f);
                 gubo.lightPos[2].v = glm::vec3(15.0f, 15.0f, 15.0f);
                 gubo.lightPos[3].v = glm::vec3(20.0f, 8.0f, 15.0f);
                 gubo.lightPos[4].v = glm::vec3(0.0f, 8.0f, 0.0f);
-                
                 
                 gubo.cosIn = 0.4591524628390111;
                 gubo.cosOut = 0.5401793718338013;
@@ -920,10 +815,8 @@ class CGproj : public BaseProject {
                             ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                             SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                             SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                            //continue;
                         } else {
                             // Normal transformation for uncollected objects
-                            //Pos +=   uy *  (float(sin(glfwGetTime()*20))/3) * deltaT;
                             
                             glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(2+float(sin(glfwGetTime()*100))) * deltaT),1.0f);
                             glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
@@ -949,7 +842,6 @@ class CGproj : public BaseProject {
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                        //continue;
                         }
                         else {
                             // Normal transformation for uncollected objects
@@ -976,7 +868,6 @@ class CGproj : public BaseProject {
                             ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                             SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                             SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
-                            //continue;
                         }
                         else {
                             // Normal transformation for uncollected objects
@@ -995,13 +886,11 @@ class CGproj : public BaseProject {
                         }
                     }
                     else if (*SC.I[i].id == "hint1" || *SC.I[i].id == "hint2"){
-                        //glm::vec3 floatingY = glm::vec3(1.0f,(glm::abs(float(sin(glfwGetTime()*100))) * deltaT),1.0f);
-                        //glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), floatingY);
                         glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
                         float angle = glfwGetTime() * glm::radians(90.0f); // Rotate 90 degrees per second (you can adjust the speed)
                         glm::mat4 continuousRotation = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0.0f, 1.0f, 0.0f)); // Around y-axis
                         
-                        ubo.mMat = SC.I[i].Wm * /*translationMatrix */ continuousRotation * rotationMatrix * baseTr;
+                        ubo.mMat = SC.I[i].Wm * continuousRotation * rotationMatrix * baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
                         
@@ -1013,7 +902,6 @@ class CGproj : public BaseProject {
                             ubo.mMat = SC.I[i].Wm * baseTr;
                             ubo.mvpMat = ViewPrj * ubo.mMat;
                             ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                            
                             SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                             SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                         }
@@ -1040,7 +928,6 @@ class CGproj : public BaseProject {
                         ubo.mMat = SC.I[i].Wm *scaleMatrix* baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                        
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
@@ -1056,18 +943,14 @@ class CGproj : public BaseProject {
                         ubo.mMat = SC.I[i].Wm * baseTr;
                         ubo.mvpMat = ViewPrj * ubo.mMat;
                         ubo.nMat = glm::inverse(glm::transpose(ubo.mMat));
-                        
                         SC.DS[i]->map(currentImage, &ubo, sizeof(ubo), 0);
                         SC.DS[i]->map(currentImage, &gubo, sizeof(gubo), 2);
                     }
                     
                     LightUniformBufferObject lightUbo{};
                     lightUbo.mvpMat = ViewPrj * glm::translate(glm::mat4(1),glm::vec3(5.0f, 15.0f, 5.0f)) * baseTr;
-                    //lightUbo.mMat = glm::mat4(1);
-                    //lightUbo.nMat = glm::mat4(1);
                 }
                 for ( int i=0 ; i< OBDUN ; i++){
-                    
                     glm::vec3 scaleTrees(0.5f, 0.5f, 0.5f);
                     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), scaleTrees);
                     dunUbo[i].mMat = glm::translate(glm::mat4(1), treePosition[i]) * scaleMatrix;
