@@ -304,7 +304,9 @@ class CGproj : public BaseProject {
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         
-        PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/TreeFrag.spv", {&DSLDun});
+
+        PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/treeFrag.spv", {&DSLDun});
+
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
         
