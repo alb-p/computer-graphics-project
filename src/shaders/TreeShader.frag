@@ -113,52 +113,10 @@ void main() {
         }
     }
     
-    /*else {
-        // Second light
-        LD = point_light_dir(fragPos, 1);
-        LC = point_light_color(fragPos, 1);
-        float intensity = max(dot(N, LD), 0.0);
-        intensity = floor(intensity * levels) / levels;
-        RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity  * gubo.lightOn.x;
-        
-        // Third light
-        LD = point_light_dir(fragPos, 2);
-        LC = point_light_color(fragPos, 2);
-        intensity = max(dot(N, LD), 0.0);
-        intensity = floor(intensity * levels) / levels;
-        RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity        * gubo.lightOn.x;
-        
-        // Fourth light
-        LD = point_light_dir(fragPos, 3);
-        LC = point_light_color(fragPos, 3);
-        intensity = max(dot(N, LD), 0.0);
-        intensity = floor(intensity * levels) / levels;
-        RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity         * gubo.lightOn.x;
-        
-        // Fift light
-        LD = point_light_dir(fragPos, 4);
-        LC = point_light_color(fragPos, 4);
-        intensity = max(dot(N, LD), 0.0);
-        intensity = floor(intensity * levels) / levels;
-        RendEqSol += Albedo * gubo.lightColor[0].rgb * intensity      * gubo.lightOn.x;
-    }*/
     
     // Add specular highlights
     RendEqSol += specular;
     
-    
-    /*
-    // Optional: Rim lighting (focused on edges, not the entire tree)
-    float rim = 1.0 - max(dot(N, EyeDir), 0.0);
-    rim = pow(rim, 3.0); // Sharpen the rim effect
-
-    // Attenuate rim lighting based on light intensity
-    float lightIntensity = max(dot(N, LD), 0.0); // Light contribution at the fragment
-    rim *= 1.0 - lightIntensity; // Reduce rim where light is strong
-
-    vec3 rimColor = vec3(0.2, 0.25, 0.2); // Subtle green-brown rim color
-    RendEqSol += rimColor * rim * 0.3; // Subtle rim lighting
-*/
     
     outColor = vec4(RendEqSol, 1.0);
 }
