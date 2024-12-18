@@ -125,17 +125,19 @@ struct DunUniformBufferObject {
 };
 
 struct UniformBufferObject {
-    alignas(16) glm::mat4 mvpMat;
-    alignas(16) glm::mat4 mMat;
-    alignas(16) glm::mat4 nMat;
+    alignas(16) glm::mat4 mvpMat; //Model-View-Projection matrix
+    alignas(16) glm::mat4 mMat; //Model matrix
+    alignas(16) glm::mat4 nMat; //Normal matrix
 };
+// These matrices are used in vertex shaders to transform vertex positions
+// and normals from model space to screen space
 
 struct GlobalUniformBufferObject {
     struct {
-    alignas(16) glm::vec3 v;
+        alignas(16) glm::vec3 v;
     } lightDir[5];
     struct {
-    alignas(16) glm::vec3 v;
+        alignas(16) glm::vec3 v;
     } lightPos[5];
     alignas(16) glm::vec4 lightColor[5];
     alignas(4) float cosIn;
@@ -174,14 +176,13 @@ std::vector<unsigned char> serializeVertices(const std::vector<VertexOverlay>& v
 const float EPSILON = 1e-6f;
 
 class CGproj;
-void GameLogic(CGproj *A, float Ar, glm::mat4 &ViewPrj, glm::mat4 &World);
 class CGproj : public BaseProject {
     protected:
     GameState game_state = notStarted;
     DescriptorSetLayout DSL, DSLOverlay, DSLDun;
     VertexDescriptor VD, VOverlay, VDDun;
     Pipeline P, POverlay, PScreens, PDun;
-    Model MText[3], MHUD[4], MEnemy[OBDUN], Mprova;
+    Model MText[3], MHUD[4], MEnemy[OBDUN];
     DescriptorSet DSText[3], DSHUD[4], DSDun[OBDUN];
     Texture TText[3], THUD[4], TEnemy[OBDUN];
     DunUniformBufferObject dunUbo[OBDUN];
@@ -305,7 +306,7 @@ class CGproj : public BaseProject {
                               VK_CULL_MODE_NONE, false);
         
 
-        PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/treeFrag.spv", {&DSLDun});
+        PDun.init(this, &VDDun,  "shaders/TreeVert.spv", "shaders/TreeFrag.spv", {&DSLDun});
 
         P.setAdvancedFeatures(VK_COMPARE_OP_LESS_OR_EQUAL, VK_POLYGON_MODE_FILL,
                               VK_CULL_MODE_NONE, false);
